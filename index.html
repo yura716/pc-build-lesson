@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PC//FORGE — интерактивный урок сборки ПК</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080d; --glass:rgba(14,17,28,.72); --glass2:rgba(20,24,40,.85);
+  --line:rgba(120,160,255,.16); --txt:#e8ecf7; --mut:#8d97b5;
+  --cy:#38f5ff; --vi:#9b6bff; --pk:#ff4fd8; --ok:#5dff9c; --warn:#ffc24d; --err:#ff4d6d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;pointer-events:none;z-index:5;transition:opacity .5s}
+.hud > *{pointer-events:auto}
+.panel{background:var(--glass);backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05)}
+#topbar{top:16px;left:16px;right:16px;display:flex;gap:14px;align-items:stretch;pointer-events:none}
+#brand{padding:12px 18px;display:flex;align-items:center;gap:12px}
+#brand .logo{font-family:Unbounded;font-weight:800;font-size:17px;letter-spacing:.5px}
+#brand .logo b{color:var(--cy);text-shadow:0 0 14px rgba(56,245,255,.6)}
+#brand .lesson{font-size:11px;color:var(--mut);font-family:'JetBrains Mono';text-transform:uppercase;letter-spacing:1.5px}
+#chapters{flex:1;padding:10px 16px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+#chapters .row{display:flex;gap:6px}
+.chap{flex:1;height:6px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden;position:relative}
+.chap i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,var(--vi),var(--cy));box-shadow:0 0 12px var(--cy);transition:width .6s}
+#chapters .names{display:flex;gap:6px;font-size:10.5px;font-family:'JetBrains Mono';color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+#chapters .names span{flex:1}
+#chapters .names span.on{color:var(--cy)}
+#stats{display:flex;gap:4px;padding:8px}
+.stat{padding:4px 14px;display:flex;flex-direction:column;justify-content:center;min-width:76px}
+.stat small{font-size:9.5px;color:var(--mut);font-family:'JetBrains Mono';letter-spacing:1.5px;text-transform:uppercase}
+.stat b{font-family:Unbounded;font-size:18px}
+.stat.xp b{color:var(--cy)} .stat.err b{color:var(--err)}
+#mute{width:44px;border:none;background:rgba(255,255,255,.05);border-radius:10px;color:var(--txt);font-size:17px}
+
+#inv{top:104px;left:16px;width:230px;padding:14px;max-height:calc(100vh - 230px);overflow:auto}
+#inv h3,.ptitle{font-size:10.5px;font-family:'JetBrains Mono';color:var(--mut);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:600}
+.item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:11px;border:1px solid transparent;margin-bottom:5px;cursor:pointer;transition:.25s;position:relative}
+.item:hover{background:rgba(255,255,255,.04)}
+.item .ic{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:rgba(255,255,255,.05);font-family:'JetBrains Mono';font-size:9.5px;font-weight:700;color:var(--mut);flex-shrink:0;border:1px solid rgba(255,255,255,.06)}
+.item .nm{font-size:12.5px;font-weight:600;line-height:1.2}
+.item .st{font-size:10px;color:var(--mut);font-family:'JetBrains Mono'}
+.item.cur{border-color:rgba(56,245,255,.5);background:rgba(56,245,255,.07);box-shadow:0 0 20px rgba(56,245,255,.12)}
+.item.cur .ic{color:var(--cy);border-color:rgba(56,245,255,.5);animation:pulse 1.4s infinite}
+.item.done{opacity:.55}
+.item.done .ic{color:var(--ok);border-color:rgba(93,255,156,.35)}
+.item.done .st{color:var(--ok)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(56,245,255,.5)}50%{box-shadow:0 0 0 6px rgba(56,245,255,0)}}
+
+#info{top:104px;right:16px;width:390px;max-height:calc(100vh - 230px);overflow:auto;padding:20px 20px 18px;transform:translateX(30px);opacity:0;transition:.45s cubic-bezier(.2,.8,.2,1)}
+#info.show{transform:none;opacity:1}
+#info::-webkit-scrollbar,#inv::-webkit-scrollbar{width:6px}
+#info::-webkit-scrollbar-thumb,#inv::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono';font-size:10.5px;font-weight:700;letter-spacing:1.5px;padding:5px 10px;border-radius:20px;margin-bottom:12px}
+.tag::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.tag.req{color:var(--err);background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3)}
+.tag.dep{color:var(--warn);background:rgba(255,194,77,.1);border:1px solid rgba(255,194,77,.3)}
+.tag.rec{color:var(--cy);background:rgba(56,245,255,.08);border:1px solid rgba(56,245,255,.3)}
+#info h2{font-family:Unbounded;font-weight:600;font-size:22px;line-height:1.2}
+#info .sub{font-family:'JetBrains Mono';font-size:11px;color:var(--mut);margin:4px 0 14px}
+.sec{margin-top:13px;padding-left:12px;border-left:2px solid rgba(155,107,255,.35)}
+.sec h4{font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--vi);font-family:'JetBrains Mono';margin-bottom:4px}
+.sec p{font-size:13.2px;line-height:1.55;color:#cdd3e6}
+.sec.tip{border-color:rgba(56,245,255,.45)} .sec.tip h4{color:var(--cy)}
+.sec.no{border-color:rgba(255,194,77,.45)} .sec.no h4{color:var(--warn)}
+.bars{display:grid;grid-template-columns:1fr auto;gap:6px 10px;margin:4px 0 2px;font-size:11.5px;color:var(--mut);align-items:center}
+.meter{display:flex;gap:3px}
+.meter i{width:14px;height:6px;border-radius:2px;background:rgba(255,255,255,.08)}
+.meter i.on{background:var(--cy);box-shadow:0 0 6px var(--cy)}
+.btn{border:none;border-radius:12px;padding:13px 18px;font-weight:700;font-size:14px;color:#061018;background:linear-gradient(135deg,var(--cy),#7fb4ff);box-shadow:0 6px 24px rgba(56,245,255,.25);transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(56,245,255,.4)}
+.btn.ghost{background:rgba(255,255,255,.06);color:var(--txt);box-shadow:none;border:1px solid var(--line)}
+.btn.vi{background:linear-gradient(135deg,var(--vi),var(--pk));color:#fff;box-shadow:0 6px 24px rgba(155,107,255,.35)}
+.btn:disabled{opacity:.35;pointer-events:none}
+#info .actions{margin-top:18px;display:flex;gap:8px}
+#info .actions .btn{flex:1}
+
+#objective{bottom:22px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:12px 14px 12px 20px;min-width:460px;max-width:760px}
+#objective .ico{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,rgba(56,245,255,.3),transparent 70%);color:var(--cy);font-size:18px;flex-shrink:0;animation:pulse 1.6s infinite}
+#objective .t small{display:block;font-family:'JetBrains Mono';font-size:10px;color:var(--cy);letter-spacing:2px;text-transform:uppercase}
+#objective .t b{font-size:15px;font-weight:600}
+#objective .t{flex:1}
+#hintBtn{padding:9px 14px;font-size:12px}
+
+#toasts{bottom:100px;left:50%;flex-direction:column-reverse !important;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:30}
+.toast{pointer-events:none;padding:11px 18px;border-radius:12px;font-size:13.5px;max-width:560px;line-height:1.45;animation:tin .35s cubic-bezier(.2,.9,.3,1.3);background:var(--glass2);border:1px solid var(--line);backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.err{border-color:rgba(255,77,109,.5);box-shadow:0 0 30px rgba(255,77,109,.2)}
+.toast.err b{color:var(--err)}
+.toast.ok{border-color:rgba(93,255,156,.5)} .toast.ok b{color:var(--ok)}
+.toast.xp{font-family:Unbounded;color:var(--cy);font-size:15px;border-color:rgba(56,245,255,.5)}
+.toast.out{animation:tout .4s forwards}
+@keyframes tin{from{opacity:0;transform:translateY(-14px) scale(.95)}}
+@keyframes tout{to{opacity:0;transform:translateY(-10px)}}
+
+#markers{position:fixed;inset:0;pointer-events:none;z-index:4}
+.mk{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;display:flex;flex-direction:column;align-items:center;animation:mkin .4s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes mkin{from{opacity:0;transform:translate(-50%,-80%) scale(.6)}}
+.mk span{font-family:'JetBrains Mono';font-weight:700;font-size:11.5px;letter-spacing:.5px;padding:6px 10px;border-radius:8px;background:rgba(8,14,24,.85);border:1px solid var(--cy);color:var(--cy);white-space:nowrap;box-shadow:0 0 18px rgba(56,245,255,.35);transition:.15s}
+.mk:hover span{background:var(--cy);color:#041016}
+.mk::after{content:'';width:2px;height:18px;background:linear-gradient(var(--cy),transparent)}
+.mk .dot{position:absolute;bottom:-5px;width:10px;height:10px;border-radius:50%;background:var(--cy);box-shadow:0 0 12px var(--cy);animation:pulse 1.2s infinite}
+.mk.vi span{border-color:var(--vi);color:#d9c8ff;box-shadow:0 0 18px rgba(155,107,255,.4)}
+.mk.vi:hover span{background:var(--vi);color:#fff}
+.mk.vi::after{background:linear-gradient(var(--vi),transparent)}
+.mk.vi .dot{background:var(--vi);box-shadow:0 0 12px var(--vi)}
+.mk.done{pointer-events:none;opacity:.6}
+.mk.done span{border-color:var(--ok);color:var(--ok);box-shadow:none}
+.mk.done::after{background:linear-gradient(var(--ok),transparent)}
+.mk.done .dot{background:var(--ok);animation:none}
+.mk.small span{font-size:10px;padding:4px 7px}
+
+#tooltip{position:fixed;z-index:20;pointer-events:none;font-size:12px;font-family:'JetBrains Mono';padding:5px 9px;border-radius:7px;background:rgba(5,8,14,.9);border:1px solid var(--line);opacity:0;transition:opacity .15s;white-space:nowrap}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;background:rgba(3,4,8,.55);backdrop-filter:blur(6px)}
+.overlay.show{display:flex;animation:fade .35s}
+@keyframes fade{from{opacity:0}}
+.card{width:min(620px,92vw);padding:28px;animation:pop .4s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes pop{from{opacity:0;transform:scale(.94) translateY(10px)}}
+.card h3{font-family:Unbounded;font-weight:600;font-size:20px;line-height:1.35;margin-bottom:18px}
+.qlabel{font-family:'JetBrains Mono';font-size:11px;letter-spacing:2px;color:var(--vi);margin-bottom:10px;text-transform:uppercase}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{text-align:left;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--txt);font-size:14.5px;transition:.2s;display:flex;gap:12px;align-items:center}
+.opt:hover{border-color:rgba(56,245,255,.5);background:rgba(56,245,255,.06)}
+.opt .k{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;background:rgba(255,255,255,.07);font-family:'JetBrains Mono';font-size:12px;flex-shrink:0}
+.opt.right{border-color:var(--ok);background:rgba(93,255,156,.1)} .opt.right .k{background:var(--ok);color:#03140a}
+.opt.wrong{border-color:var(--err);background:rgba(255,77,109,.1);animation:shake .4s} .opt.wrong .k{background:var(--err)}
+.opts.locked .opt{pointer-events:none}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.explain{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(155,107,255,.08);border:1px solid rgba(155,107,255,.3);font-size:13.5px;line-height:1.55;display:none}
+.explain.show{display:block;animation:fade .3s}
+.card .foot{margin-top:18px;display:flex;justify-content:flex-end}
+
+/* start screen */
+#start{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,rgba(155,107,255,.25),transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(56,245,255,.18),transparent 55%),rgba(5,6,11,.82);backdrop-filter:blur(3px);transition:opacity .8s}
+#start.hide{opacity:0;pointer-events:none}
+#start .grid{position:absolute;inset:0;background-image:linear-gradient(rgba(56,245,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(56,245,255,.06) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse at center,#000 20%,transparent 75%);animation:gridmove 12s linear infinite}
+@keyframes gridmove{to{background-position:48px 48px}}
+.hero{position:relative;text-align:center;max-width:880px;padding:20px}
+.hero .kicker{font-family:'JetBrains Mono';font-size:12px;letter-spacing:4px;color:var(--cy);text-transform:uppercase;margin-bottom:18px}
+.hero h1{font-family:Unbounded;font-weight:800;font-size:clamp(40px,7vw,86px);line-height:.98;letter-spacing:-1px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--cy),var(--vi),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 30px rgba(155,107,255,.4))}
+.hero p{margin:22px auto 0;max-width:620px;color:#aab3cf;font-size:16.5px;line-height:1.6}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:26px 0 30px}
+.chips span{font-size:12.5px;padding:7px 13px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.chips span b{color:var(--cy);font-family:'JetBrains Mono';margin-right:6px}
+#startBtn{font-size:17px;padding:18px 38px;border-radius:14px}
+.controls{margin-top:24px;font-family:'JetBrains Mono';font-size:11.5px;color:var(--mut);display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.controls kbd{border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:2px 6px;margin-right:6px;color:var(--txt);background:rgba(255,255,255,.04)}
+#loading{margin-top:14px;font-family:'JetBrains Mono';font-size:12px;color:var(--mut)}
+
+/* screen overlay (BIOS / Windows) */
+#screen{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;background:rgba(2,3,6,.6);backdrop-filter:blur(8px)}
+#screen.show{display:flex;animation:fade .5s}
+.monitor{width:min(1060px,94vw);aspect-ratio:16/9.2;max-height:88vh;border-radius:18px;padding:14px;background:linear-gradient(160deg,#20232c,#0b0c10);box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06),0 0 80px rgba(155,107,255,.15);position:relative}
+.monitor::after{content:'NEXUS';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);font-family:Unbounded;font-size:9px;letter-spacing:4px;color:#555b6a}
+.scr{width:100%;height:100%;border-radius:6px;overflow:hidden;position:relative;background:#000}
+.coach{position:absolute;z-index:50;right:24px;bottom:24px;width:330px;padding:16px 18px;font-size:13.2px;line-height:1.55}
+.coach .who{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-family:'JetBrains Mono';font-size:11px;letter-spacing:1.5px;color:var(--cy);text-transform:uppercase}
+.coach .who i{width:26px;height:26px;border-radius:50%;background:conic-gradient(var(--cy),var(--vi),var(--pk),var(--cy));display:block;animation:spin 4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* BIOS */
+.bios{position:absolute;inset:0;background:radial-gradient(ellipse at top,#1d1408,#0a0806 70%);color:#f1d9b5;font-family:'JetBrains Mono';font-size:13px;display:flex;flex-direction:column}
+.bios .hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(255,150,40,.3);background:rgba(255,140,30,.06)}
+.bios .hdr b{color:#ff9d2e;font-size:15px;letter-spacing:2px}
+.bios .tabs{display:flex;gap:4px;padding:10px 20px 0}
+.bios .tabs button{background:none;border:1px solid transparent;border-bottom:none;color:#b59873;padding:8px 16px;font-family:inherit;font-size:12.5px;border-radius:6px 6px 0 0}
+.bios .tabs button.on{color:#ffb35c;border-color:rgba(255,150,40,.35);background:rgba(255,140,30,.08)}
+.bios .body{flex:1;display:grid;grid-template-columns:1fr 290px;border-top:1px solid rgba(255,150,40,.35)}
+.bios .main{padding:18px 22px;overflow:auto}
+.bios .side{border-left:1px solid rgba(255,150,40,.25);padding:16px;background:rgba(0,0,0,.25)}
+.bios .row{display:flex;justify-content:space-between;padding:9px 12px;border-radius:6px;margin-bottom:4px}
+.bios .row:nth-child(odd){background:rgba(255,140,30,.04)}
+.bios .row .v{color:#fff}
+.bios .row.click{cursor:pointer;border:1px solid rgba(255,150,40,.25)}
+.bios .row.click:hover{background:rgba(255,140,30,.15)}
+.bios .row .v.hl{color:#ffb35c}
+.bios .task{display:flex;gap:9px;padding:8px 0;font-size:12px;color:#b59873;line-height:1.4}
+.bios .task.done{color:#7dffa8}
+.bios .task i{font-style:normal}
+.bios .foot{display:flex;justify-content:space-between;padding:10px 20px;border-top:1px solid rgba(255,150,40,.3);font-size:11.5px;color:#b59873}
+.bios .bbtn{background:rgba(255,140,30,.15);border:1px solid rgba(255,150,40,.5);color:#ffcf96;padding:7px 14px;border-radius:6px;font-family:inherit;font-size:12px}
+.bios .bbtn:hover{background:rgba(255,140,30,.3)}
+.bios .bbtn:disabled{opacity:.3}
+.bios .gauge{height:7px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px}
+.bios .gauge i{display:block;height:100%;background:linear-gradient(90deg,#ff9d2e,#ffd36b)}
+
+/* Windows */
+.win{position:absolute;inset:0;font-family:'Segoe UI',Inter,sans-serif;color:#111}
+.win.setup{background:radial-gradient(ellipse at 30% 40%,#3d58c9,#1a2470 50%,#0b0f3a)}
+.win.oobe{background:linear-gradient(135deg,#dfe8f7,#c5d5f0);}
+.wdlg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:62%;min-height:58%;background:#f3f3f3;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.45);padding:30px 34px 74px;animation:pop .35s}
+.wdlg h2{font-weight:600;font-size:22px;margin-bottom:6px;font-family:'Segoe UI',Inter}
+.wdlg .d{font-size:13px;color:#444;margin-bottom:18px;line-height:1.5}
+.wdlg label{display:block;font-size:12.5px;margin:10px 0 4px;color:#333}
+.wdlg select,.wdlg input[type=text]{width:100%;padding:8px 10px;border:1px solid #bbb;border-radius:4px;font-size:13px;background:#fff;font-family:inherit}
+.wdlg .wfoot{position:absolute;left:0;right:0;bottom:0;padding:16px 26px;display:flex;justify-content:space-between;align-items:center;background:#eaeaea;border-top:1px solid #ddd;border-radius:0 0 8px 8px}
+.wbtn{background:#0067c0;color:#fff;border:none;padding:8px 26px;border-radius:4px;font-size:13px;font-family:inherit}
+.wbtn:hover{background:#1975c5}
+.wbtn:disabled{background:#9bb8d6}
+.wbtn.sec{background:#fff;color:#111;border:1px solid #bbb}
+.wlink{color:#0067c0;font-size:12.5px;background:none;border:none;text-decoration:underline;font-family:inherit}
+.wopt{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid #ccc;border-radius:6px;margin-bottom:8px;cursor:pointer;background:#fff;font-size:13px}
+.wopt:hover{border-color:#0067c0}
+.wopt.sel{border-color:#0067c0;background:#e6f0fb;box-shadow:inset 0 0 0 1px #0067c0}
+.wopt b{display:block;margin-bottom:2px}
+.wtable{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border:1px solid #ccc}
+.wtable th{text-align:left;font-weight:500;color:#555;padding:7px 10px;border-bottom:1px solid #ddd;background:#f7f7f7}
+.wtable td{padding:9px 10px;border-bottom:1px solid #eee;cursor:pointer}
+.wtable tr.sel td{background:#cce4f7}
+.wtable tr:hover td{background:#e5f1fb}
+.wprog{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center}
+.spinner{width:46px;height:46px;position:relative;margin-bottom:26px}
+.spinner i{position:absolute;inset:0;animation:orbit 2s cubic-bezier(.5,.15,.5,.85) infinite}
+.spinner i::before{content:'';position:absolute;top:0;left:50%;width:6px;height:6px;border-radius:50%;background:#fff}
+.spinner i:nth-child(2){animation-delay:.12s}.spinner i:nth-child(3){animation-delay:.24s}.spinner i:nth-child(4){animation-delay:.36s}.spinner i:nth-child(5){animation-delay:.48s}
+@keyframes orbit{to{transform:rotate(360deg)}}
+.wprog h2{font-weight:300;font-size:26px;margin-bottom:10px}
+.wprog .pp{font-size:14px;opacity:.8}
+.wsteps{margin-top:24px;text-align:left;font-size:13px;line-height:2}
+.wsteps div{opacity:.4}.wsteps div.on{opacity:1}.wsteps div.ok{opacity:.75}
+.wsteps div.ok::before{content:'✓ ';color:#7dffa8}
+.wsteps div.on::before{content:'› '}
+.dos{position:absolute;inset:0;background:#000;color:#ccc;font-family:'JetBrains Mono';padding:40px;font-size:15px}
+.desk{position:absolute;inset:0;background:radial-gradient(ellipse at 60% 55%,#5aa3ff 0%,#2c5bd6 25%,#14267a 55%,#0a1140 80%);overflow:hidden}
+.desk::before{content:'';position:absolute;width:70%;height:90%;left:28%;top:10%;background:radial-gradient(ellipse,rgba(160,210,255,.7),transparent 60%);filter:blur(30px);border-radius:50%;transform:rotate(-20deg)}
+.taskbar{position:absolute;left:0;right:0;bottom:0;height:44px;background:rgba(30,34,52,.82);backdrop-filter:blur(20px);display:flex;justify-content:center;align-items:center;gap:8px}
+.taskbar i{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.15);display:block}
+.taskbar i:first-child{background:linear-gradient(135deg,#4cc2ff,#0078d4)}
+.wapp{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:60%;background:#f8f9fb;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;animation:pop .4s}
+.wapp .bar{padding:10px 14px;font-size:12px;background:#eef0f4;display:flex;justify-content:space-between;color:#333}
+.wapp .in{padding:18px 20px;font-size:13px}
+.chk{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid #ddd;border-radius:7px;margin-bottom:7px;background:#fff;cursor:pointer;transition:.2s}
+.chk:hover{border-color:#0067c0}
+.chk .bx{width:18px;height:18px;border-radius:4px;border:1.5px solid #888;display:grid;place-items:center;font-size:12px;flex-shrink:0}
+.chk.on{background:#eafbf0;border-color:#2ea44f}.chk.on .bx{background:#2ea44f;border-color:#2ea44f;color:#fff}
+.chk.bad{background:#fdeaea;border-color:#d33;animation:shake .4s}
+
+/* front panel mini-game */
+.fp{display:grid;grid-template-columns:200px 1fr;gap:22px;margin-top:6px}
+.fpc{display:flex;flex-direction:column;gap:8px}
+.fpc button{padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-family:'JetBrains Mono';font-size:12px;text-align:left;display:flex;align-items:center;gap:8px}
+.fpc button i{width:10px;height:10px;border-radius:2px;display:block}
+.fpc button.sel{border-color:var(--cy);background:rgba(56,245,255,.1);box-shadow:0 0 14px rgba(56,245,255,.25)}
+.fpc button.used{opacity:.3;pointer-events:none}
+.hdr2{background:#0e1a14;border-radius:12px;padding:18px;border:1px solid rgba(93,255,156,.2);position:relative}
+.pins{display:grid;grid-template-columns:repeat(5,52px);gap:10px 10px;justify-content:center;margin:8px 0}
+.pin{height:52px;border-radius:8px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);display:grid;place-items:center;cursor:pointer;position:relative;font-family:'JetBrains Mono';font-size:9.5px;color:var(--mut)}
+.pin::before{content:'';width:12px;height:12px;background:linear-gradient(135deg,#ffe08a,#b8862b);border-radius:2px;position:absolute;top:8px}
+.pin span{position:absolute;bottom:5px}
+.pin:hover{border-color:var(--cy)}
+.pin.key{opacity:.25;pointer-events:none}
+.pin.key::before{background:#333}
+.pin.f{border-style:solid}
+.silk{display:flex;justify-content:center;gap:10px;font-family:'JetBrains Mono';font-size:10px;color:#d8e6dc}
+.silk span{width:52px;text-align:center}
+.silk.wide span.w2{width:114px}
+
+/* final */
+#final .card{width:min(720px,94vw);text-align:center}
+.rank{font-family:Unbounded;font-weight:800;font-size:34px;margin:6px 0 4px;background:linear-gradient(90deg,var(--cy),var(--vi),var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
+.fstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:22px 0}
+.fstats div{padding:14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.fstats b{display:block;font-family:Unbounded;font-size:22px;color:var(--cy)}
+.fstats small{font-size:11px;color:var(--mut)}
+.learned{text-align:left;columns:2;gap:24px;font-size:13px;color:#cdd3e6;line-height:1.9;margin-bottom:22px}
+.learned div::before{content:'✓ ';color:var(--ok)}
+
+.qte{position:fixed;inset:0;z-index:46;display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;pointer-events:none}
+.qte.show{display:flex}
+.qte .key{pointer-events:auto;font-family:Unbounded;font-weight:800;font-size:44px;padding:22px 40px;border-radius:18px;border:2px solid var(--cy);background:rgba(5,10,18,.85);color:var(--cy);box-shadow:0 0 60px rgba(56,245,255,.5);animation:pulse 0.8s infinite;cursor:pointer}
+.qte .lbl{font-family:'JetBrains Mono';font-size:14px;background:rgba(5,10,18,.85);padding:8px 14px;border-radius:8px}
+.qte .bar{width:300px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+.qte .bar i{display:block;height:100%;background:var(--cy);width:100%}
+
+@media (max-width:1100px){#inv{display:none}#info{width:340px}}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="stage"></div>
+<div id="markers"></div>
+<div id="tooltip"></div>
+
+<!-- HUD -->
+<div class="hud" id="topbar" style="opacity:0">
+  <div class="panel" id="brand"><div><div class="logo">PC<b>//</b>FORGE</div><div class="lesson">урок · сборка пк</div></div></div>
+  <div class="panel" id="chapters">
+    <div class="row" id="chapBars"></div>
+    <div class="names" id="chapNames"></div>
+  </div>
+  <div class="panel" id="stats">
+    <div class="stat xp"><small>XP</small><b id="xp">0</b></div>
+    <div class="stat err"><small>Ошибки</small><b id="mist">0</b></div>
+    <div class="stat"><small>Время</small><b id="time" class="mono" style="font-family:'JetBrains Mono'">0:00</b></div>
+    <button id="mute" title="Звук">🔊</button>
+  </div>
+</div>
+<div class="hud panel" id="inv" style="opacity:0"><h3>Детали на столе</h3><div id="invList"></div></div>
+<div class="hud panel" id="info"></div>
+<div class="hud panel" id="objective" style="opacity:0">
+  <div class="ico">◆</div>
+  <div class="t"><small id="objSmall">Задание</small><b id="objText">—</b></div>
+  <button class="btn ghost" id="hintBtn">💡 Подсказка</button>
+</div>
+<div class="hud" id="toasts"></div>
+
+<!-- quiz / generic modal -->
+<div class="overlay" id="modal"><div class="card panel" id="modalCard"></div></div>
+<div class="overlay" id="final"><div class="card panel" id="finalCard"></div></div>
+
+<!-- BIOS / Windows screen -->
+<div id="screen"><div class="monitor"><div class="scr" id="scr"></div></div><div class="coach panel" id="coach"><div class="who"><i></i>Наставник</div><div id="coachText"></div></div></div>
+
+<div class="qte" id="qte"><div class="lbl">Плата стартует… успей зайти в BIOS!</div><div class="key" id="qteKey">DEL</div><div class="bar"><i id="qteBar"></i></div></div>
+
+<!-- start -->
+<div id="start">
+  <div class="grid"></div>
+  <div class="hero">
+    <div class="kicker">◆ Интерактивный 3D-урок ◆</div>
+    <h1>Собери<br><em>свой ПК</em></h1>
+    <p>Перед тобой уютный рабочий стол, пустой корпус и коробки с железом. Бери детали, ставь их на место и разбирайся, зачем каждая нужна. Потом подключи провода, зайди в BIOS и установи Windows.</p>
+    <div class="chips">
+      <span><b>01</b>Сборка на столе</span><span><b>02</b>Корпус и железо</span><span><b>03</b>Провода</span><span><b>04</b>Запуск и BIOS</span><span><b>05</b>Установка Windows</span>
+    </div>
+    <button class="btn" id="startBtn" disabled>Загрузка сцены…</button>
+    <div class="controls"><span><kbd>ЛКМ</kbd>взять / поставить</span><span><kbd>Тянуть</kbd>вращать камеру</span><span><kbd>Колесо</kbd>зум</span><span><kbd>H</kbd>подсказка</span></div>
+    <div id="loading"></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const $ = s => document.querySelector(s);
+const V3 = THREE.Vector3;
+const PI = Math.PI;
+try { await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 2500))]); } catch(e) {}
+
+/* =========================================================
+   RENDERER / SCENE
+   ========================================================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x07080d);
+scene.fog = new THREE.Fog(0x07080d, 22, 46);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+const PR = Math.min(devicePixelRatio, 1.5);
+renderer.setPixelRatio(PR);
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+$('#stage').appendChild(renderer.domElement);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.05, 120);
+camera.position.set(0.3, 9, 13);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0.3, 0.8, 0.2);
+controls.maxPolarAngle = PI * 0.48;
+controls.minDistance = 1.5;
+controls.maxDistance = 20;
+controls.enablePan = true;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.3;
+
+const rt = new THREE.WebGLRenderTarget(innerWidth * PR, innerHeight * PR, { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.setPixelRatio(PR);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.45, 0.92);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  t.userData.ctx = g; t.userData.canvas = c;
+  return t;
+}
+const std = (color, rough = .5, metal = 0, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, ...extra });
+const M = {
+  pcb: std(0x15181f, .55, .3), black: std(0x0d0e12, .45, .35), plastic: std(0x1e2129, .6, .05),
+  steel: std(0x22252d, .38, .8), alu: std(0xc4c8d0, .25, 1), aluDark: std(0x3a3e49, .32, .9),
+  copper: std(0xd0773f, .22, 1), gold: std(0xdcb04a, .22, 1), green: std(0x103f2c, .5, .1),
+  white: std(0xe8eaf0, .4, 0), rubber: std(0x0a0a0a, .95, 0), slotGrey: std(0x5a5f6b, .5, .1),
+};
+const rgbMats = [];
+function glow(color, intensity = 3) {
+  const m = new THREE.MeshStandardMaterial({ color: 0x050505, emissive: color, emissiveIntensity: intensity, roughness: .4 });
+  return m;
+}
+function rgb(intensity = 3.2) {
+  const m = glow(0x38f5ff, 0); m.userData.base = intensity; m.userData.idx = rgbMats.length; rgbMats.push(m); return m;
+}
+function mesh(geo, mat, parent, x = 0, y = 0, z = 0) {
+  const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+  if (parent) parent.add(m); return m;
+}
+function box(w, h, d, mat, x, y, z, parent, r = 0) {
+  const geo = r > 0 ? new RoundedBoxGeometry(w, h, d, 3, Math.min(r, Math.min(w, h, d) / 2 - 1e-4)) : new THREE.BoxGeometry(w, h, d);
+  return mesh(geo, mat, parent, x, y, z);
+}
+function cylZ(r, h, mat, parent, x, y, z, seg = 24) { const m = mesh(new THREE.CylinderGeometry(r, r, h, seg), mat, parent, x, y, z); m.rotation.x = PI / 2; return m; }
+const faceMats = (side, top) => [side, side, side, side, top, side];
+
+/* =========================================================
+   TEXTURES
+   ========================================================= */
+const BW = 2.44, BH = 3.05;
+const mbTex = canvasTex(1024, 1280, (g, W, H) => {
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#181c25'); gr.addColorStop(1, '#0d0f15');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 340; i++) {
+    g.strokeStyle = `rgba(${Math.random() < .5 ? '70,190,220' : '150,120,255'},${.04 + Math.random() * .07})`;
+    g.lineWidth = 1 + Math.random() * 2;
+    g.beginPath(); let x = Math.random() * W, y = Math.random() * H; g.moveTo(x, y);
+    for (let k = 0; k < 4; k++) { if (Math.random() < .5) x += (Math.random() - .5) * 260; else y += (Math.random() - .5) * 260; g.lineTo(x, y); }
+    g.stroke();
+  }
+  for (let i = 0; i < 500; i++) { g.fillStyle = 'rgba(200,210,230,.12)'; g.beginPath(); g.arc(Math.random() * W, Math.random() * H, 1.6, 0, 7); g.fill(); }
+  const P = (x, y) => [(x + BW / 2) / BW * W, (BH / 2 - y) / BH * H];
+  g.fillStyle = 'rgba(225,232,245,.8)'; g.font = '600 19px "JetBrains Mono", monospace';
+  const L = (t, x, y, a = 0) => { const [px, py] = P(x, y); g.save(); g.translate(px, py); g.rotate(a); g.fillText(t, 0, 0); g.restore(); };
+  L('CPU_FAN', 0.48, 1.33); L('ATX_24P', 1.0, 0.0, -PI / 2); L('EPS_8P', -0.92, 1.33); L('M.2_1 (CPU)', -0.45, -0.07);
+  L('PCIEX16_1', -0.85, -0.42); L('PCIEX16_2', -0.85, -1.12); L('F_PANEL', 0.78, -1.3); L('SATA6G', 1.0, -0.25, -PI / 2); L('SYS_FAN1', -0.35, -1.36);
+  ['A1', 'A2', 'B1', 'B2'].forEach((s, i) => L(s, 0.63 + i * 0.1, 1.43 - (i % 2) * 0.04));
+  g.strokeStyle = 'rgba(225,232,245,.35)'; g.lineWidth = 2;
+  const [sx, sy] = P(-0.14, 1.04); g.strokeRect(sx, sy, 0.58 / BW * W, 0.58 / BH * H);
+  g.save(); const [bx, by] = P(-0.95, -1.42); g.translate(bx, by);
+  g.font = '800 44px Unbounded, sans-serif'; const lg = g.createLinearGradient(0, 0, 360, 0); lg.addColorStop(0, '#38f5ff'); lg.addColorStop(1, '#9b6bff');
+  g.fillStyle = lg; g.fillText('NEXUS', 0, 0); g.font = '600 18px "JetBrains Mono"'; g.fillStyle = 'rgba(225,232,245,.7)'; g.fillText('X870E · FORGE EDITION', 0, 26); g.restore();
+});
+const ihsTex = canvasTex(256, 256, (g, W, H) => {
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#d9dde4'); gr.addColorStop(.5, '#aeb3bd'); gr.addColorStop(1, '#ced2da');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#3b3f48'; g.font = '800 30px Unbounded'; g.fillText('NEXUS', 28, 70);
+  g.font = '700 20px "JetBrains Mono"'; g.fillText('CORE N9 · 9800', 28, 112); g.font = '400 15px "JetBrains Mono"'; g.fillText('8C/16T  5.4GHz', 28, 140); g.fillText('X4A2-7713  e4', 28, 162);
+  g.fillStyle = '#c9a23a'; g.beginPath(); g.moveTo(8, H - 8); g.lineTo(38, H - 8); g.lineTo(8, H - 38); g.fill();
+});
+const ssdTex = canvasTex(512, 140, (g, W, H) => {
+  g.fillStyle = '#111318'; g.fillRect(0, 0, W, H);
+  const lg = g.createLinearGradient(0, 0, W, 0); lg.addColorStop(0, '#9b6bff'); lg.addColorStop(1, '#38f5ff');
+  g.fillStyle = lg; g.fillRect(0, 0, 10, H);
+  g.fillStyle = '#fff'; g.font = '800 40px Unbounded'; g.fillText('NV5', 34, 62);
+  g.font = '600 22px "JetBrains Mono"'; g.fillStyle = '#9fb0d0'; g.fillText('NVMe M.2 2280 · 1TB · PCIe 5.0', 34, 104);
+});
+const psuTex = canvasTex(512, 320, (g, W, H) => {
+  g.fillStyle = '#0e0f13'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,.08)'; for (let i = 0; i < 30; i++) { g.beginPath(); g.moveTo(i * 30 - 200, 0); g.lineTo(i * 30, H); g.stroke(); }
+  g.fillStyle = '#fff'; g.font = '800 64px Unbounded'; g.fillText('850W', 36, 120);
+  g.fillStyle = '#ffc24d'; g.font = '700 24px "JetBrains Mono"'; g.fillText('80 PLUS GOLD · ATX 3.1', 38, 170);
+  g.fillStyle = '#8d97b5'; g.font = '400 20px "JetBrains Mono"'; g.fillText('FULLY MODULAR · 12V-2x6', 38, 210);
+  g.fillStyle = '#38f5ff'; g.fillRect(38, 250, 120, 6);
+});
+const gpuTex = canvasTex(1024, 420, (g, W, H) => {
+  g.fillStyle = '#16181e'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 18; i++) { g.fillStyle = `rgba(255,255,255,${.02 + (i % 3) * .015})`; g.fillRect(i * 64, 0, 30, H); }
+  g.font = '800 92px Unbounded'; const lg = g.createLinearGradient(0, 0, 700, 0); lg.addColorStop(0, '#ffffff'); lg.addColorStop(1, '#9fb0d0');
+  g.fillStyle = lg; g.fillText('FORGE X90', 70, 250);
+  g.font = '600 30px "JetBrains Mono"'; g.fillStyle = '#38f5ff'; g.fillText('// 16 GB GDDR7', 76, 310);
+});
+const boxTex = canvasTex(1024, 128, (g, W, H) => {
+  g.fillStyle = '#101219'; g.fillRect(0, 0, W, H);
+  g.font = '800 54px Unbounded'; const lg = g.createLinearGradient(0, 0, W, 0); lg.addColorStop(0, '#38f5ff'); lg.addColorStop(1, '#ff4fd8');
+  g.fillStyle = lg; g.fillText('NEXUS X870E', 40, 84);
+  g.fillStyle = '#8d97b5'; g.font = '600 24px "JetBrains Mono"'; g.fillText('ATX · AM5 · DDR5 · WIFI 7', 560, 80);
+});
+const woodTex = canvasTex(1024, 512, (g, W, H) => {
+  g.fillStyle = '#3a271a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 160; i++) {
+    const y = Math.random() * H; g.strokeStyle = `rgba(${Math.random() < .5 ? '20,12,6' : '90,60,38'},${.15 + Math.random() * .25})`;
+    g.lineWidth = .5 + Math.random() * 2.5; g.beginPath(); g.moveTo(0, y);
+    for (let x = 0; x <= W; x += 32) g.lineTo(x, y + Math.sin(x * .01 + i) * 4); g.stroke();
+  }
+});
+woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+const matTex = canvasTex(1024, 700, (g, W, H) => {
+  g.fillStyle = '#0c1018'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(56,245,255,.10)'; g.lineWidth = 1;
+  for (let x = 0; x < W; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.strokeStyle = 'rgba(155,107,255,.5)'; g.lineWidth = 3; g.strokeRect(14, 14, W - 28, H - 28);
+  g.fillStyle = 'rgba(56,245,255,.45)'; g.font = '700 22px "JetBrains Mono"'; g.fillText('ESD SAFE ZONE // PC FORGE WORKBENCH', 34, H - 34);
+  g.fillStyle = 'rgba(255,255,255,.18)'; g.font = '400 16px "JetBrains Mono"';
+  for (let i = 0; i <= 10; i++) g.fillText(i * 5 + '', 30 + i * 90, 44);
+});
+const cityTex = canvasTex(1400, 800, (g, W, H) => {
+  const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#0a0b2a'); sky.addColorStop(.45, '#33205e'); sky.addColorStop(.75, '#a24a76'); sky.addColorStop(1, '#ff9a6b');
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(255,255,255,${Math.random() * .8})`; g.fillRect(Math.random() * W, Math.random() * H * .45, 1.6, 1.6); }
+  g.fillStyle = '#ffe7d0'; g.shadowColor = '#ffd0a0'; g.shadowBlur = 40; g.beginPath(); g.arc(W * .78, H * .22, 38, 0, 7); g.fill(); g.shadowBlur = 0;
+  const layer = (base, col, hmin, hmax, win) => {
+    let x = 0; while (x < W) {
+      const w = 40 + Math.random() * 90, h = hmin + Math.random() * (hmax - hmin); g.fillStyle = col; g.fillRect(x, H - h - base, w, h + base);
+      if (win) for (let wy = H - h - base + 10; wy < H - 10; wy += 16) for (let wx = x + 6; wx < x + w - 8; wx += 12) if (Math.random() < .28) { g.fillStyle = Math.random() < .5 ? 'rgba(255,200,120,.9)' : 'rgba(120,220,255,.8)'; g.fillRect(wx, wy, 5, 8); }
+      g.fillStyle = col; x += w + 4;
+    }
+  };
+  layer(0, '#2a1d3f', 160, 340, false); layer(0, '#140f22', 120, 300, true);
+});
+const neonTex = canvasTex(1024, 256, (g, W, H) => {
+  g.clearRect(0, 0, W, H);
+  g.font = '800 110px Unbounded'; g.textBaseline = 'middle';
+  g.shadowColor = '#9b6bff'; g.shadowBlur = 30; g.fillStyle = '#d9c8ff'; g.fillText('BUILD', 40, 130);
+  g.shadowColor = '#38f5ff'; g.fillStyle = '#c9fbff'; g.fillText('·LEARN', 470, 130);
+});
+const braidTex = canvasTex(64, 64, (g, W, H) => {
+  g.fillStyle = '#15161c'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = '#2b2e38'; g.lineWidth = 6; for (let i = -64; i < 128; i += 16) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + 64, 64); g.stroke(); }
+});
+braidTex.wrapS = braidTex.wrapT = THREE.RepeatWrapping; braidTex.repeat.set(40, 1);
+
+/* Monitor screen canvas */
+const screenTex = canvasTex(1280, 720, () => {});
+function drawScreen(mode, extra = {}) {
+  const g = screenTex.userData.ctx, W = 1280, H = 720;
+  g.save(); g.clearRect(0, 0, W, H);
+  if (mode === 'off') {
+    const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#0b0c10'); gr.addColorStop(.5, '#050507'); gr.addColorStop(1, '#0a0b0e');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgba(255,255,255,.025)'; g.beginPath(); g.moveTo(0, 0); g.lineTo(W * .45, 0); g.lineTo(W * .15, H); g.lineTo(0, H); g.fill();
+    g.fillStyle = 'rgba(56,245,255,.5)'; g.font = '600 22px "JetBrains Mono"'; g.fillText('NO SIGNAL', W / 2 - 60, H / 2 + 8);
+  } else if (mode === 'post') {
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    g.font = '800 120px Unbounded'; const lg = g.createLinearGradient(300, 0, 980, 0); lg.addColorStop(0, '#38f5ff'); lg.addColorStop(1, '#9b6bff');
+    g.fillStyle = lg; g.textAlign = 'center'; g.fillText('NEXUS', W / 2, H / 2);
+    g.font = '400 26px "JetBrains Mono"'; g.fillStyle = '#ccc'; g.fillText('Press DEL or F2 to enter UEFI BIOS setting', W / 2, H - 90);
+  } else if (mode === 'bios') {
+    g.fillStyle = '#120c06'; g.fillRect(0, 0, W, H); g.fillStyle = '#ff9d2e'; g.font = '700 34px "JetBrains Mono"'; g.fillText('NEXUS UEFI BIOS', 40, 64);
+    g.fillStyle = 'rgba(255,157,46,.25)'; g.fillRect(40, 90, W - 80, 2);
+    g.fillStyle = '#f1d9b5'; g.font = '400 24px "JetBrains Mono"';
+    ['CPU: NEXUS Core N9 9800   38°C', 'DRAM: 32768 MB DDR5', 'NVMe: NV5 1TB', 'Boot: UEFI USB Flash'].forEach((t, i) => g.fillText(t, 50, 160 + i * 48));
+  } else if (mode === 'setup') {
+    const gr = g.createRadialGradient(W * .3, H * .4, 10, W * .3, H * .4, W); gr.addColorStop(0, '#3d58c9'); gr.addColorStop(.5, '#1a2470'); gr.addColorStop(1, '#0b0f3a');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H); g.fillStyle = '#f3f3f3'; g.fillRect(W * .2, H * .2, W * .6, H * .6);
+    g.fillStyle = '#111'; g.font = '600 34px Inter'; g.fillText('Установка Windows 11', W * .24, H * .3);
+    g.fillStyle = '#0067c0'; g.fillRect(W * .24, H * .62, W * .3 * (extra.p ?? .3), 10);
+  } else if (mode === 'desktop') {
+    const gr = g.createRadialGradient(W * .6, H * .55, 10, W * .6, H * .55, W * .8); gr.addColorStop(0, '#7cc0ff'); gr.addColorStop(.3, '#2c5bd6'); gr.addColorStop(.7, '#14267a'); gr.addColorStop(1, '#0a1140');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    g.globalAlpha = .55; g.fillStyle = '#bfe0ff'; g.beginPath(); g.ellipse(W * .62, H * .5, 260, 120, -.5, 0, 7); g.fill(); g.globalAlpha = 1;
+    g.fillStyle = 'rgba(25,28,45,.85)'; g.fillRect(0, H - 54, W, 54);
+    for (let i = 0; i < 6; i++) { g.fillStyle = i ? 'rgba(255,255,255,.25)' : '#3aa0ff'; g.fillRect(W / 2 - 150 + i * 52, H - 44, 34, 34); }
+  }
+  g.restore(); screenTex.needsUpdate = true;
+}
+
+/* =========================================================
+   ENVIRONMENT: room, desk, decor
+   ========================================================= */
+scene.add(new THREE.HemisphereLight(0x8a9cff, 0x2a1a10, 0.55));
+const lampLight = new THREE.SpotLight(0xffc68a, 70, 24, 0.85, 0.6, 1.5);
+lampLight.position.set(6.2, 5.0, -2.0); lampLight.target.position.set(1.2, 0, 0.8);
+lampLight.castShadow = true; lampLight.shadow.mapSize.set(2048, 2048); lampLight.shadow.bias = -0.0004; lampLight.shadow.radius = 4;
+scene.add(lampLight, lampLight.target);
+const key = new THREE.DirectionalLight(0xaabbff, 0.9);
+key.position.set(-5, 11, 8); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -10, right: 10, top: 8, bottom: -8, near: 1, far: 30 }); key.shadow.bias = -0.0004;
+scene.add(key);
+const rim = new THREE.PointLight(0x8a5cff, 14, 16); rim.position.set(-7, 4, -3); scene.add(rim);
+const rim2 = new THREE.PointLight(0x38c8ff, 10, 14); rim2.position.set(8, 3, 2); scene.add(rim2);
+const windowLight = new THREE.PointLight(0xff8a6b, 10, 14); windowLight.position.set(2.5, 5.5, -3.4); scene.add(windowLight);
+
+// desk
+const desk = box(16, 0.35, 7, std(0xffffff, .55, 0, { map: woodTex }), 0, -0.175, 0, scene, 0.06);
+desk.receiveShadow = true;
+box(16.02, 0.02, 0.02, glow(0x9b6bff, 1.6), 0, -0.34, 3.5, scene);
+// wall + window
+const wall = mesh(new THREE.PlaneGeometry(50, 24), std(0x17161d, .9, 0), scene, 0, 7, -4.3);
+const win = new THREE.Group(); win.position.set(2.8, 6.0, -4.25); scene.add(win);
+mesh(new THREE.PlaneGeometry(8, 4.6), new THREE.MeshBasicMaterial({ map: cityTex, color: 0xbbbbbb, toneMapped: true }), win);
+const frameM = std(0x0f1015, .5, .4);
+box(8.3, .18, .2, frameM, 0, 2.38, 0.05, win); box(8.3, .18, .2, frameM, 0, -2.38, 0.05, win);
+box(.18, 4.9, .2, frameM, -4.1, 0, 0.05, win); box(.18, 4.9, .2, frameM, 4.1, 0, 0.05, win); box(.1, 4.6, .15, frameM, 0, 0, 0.05, win);
+box(8.6, .12, .6, std(0x2a2b33, .6, .2), 0, -2.5, 0.25, win);
+// neon sign
+const neon = mesh(new THREE.PlaneGeometry(4.6, 1.15), new THREE.MeshBasicMaterial({ map: neonTex, transparent: true, color: new THREE.Color(2.2, 2.2, 2.2) }), scene, -4.3, 6.4, -4.25);
+neon.castShadow = false;
+// desk mat
+const matM = std(0xffffff, .85, 0, { map: matTex });
+box(7.2, 0.03, 4.9, matM, -2.6, 0.015, 0.85, scene, 0.012);
+
+// monitor
+const monitor = new THREE.Group(); monitor.position.set(-4.3, 0, -2.55); monitor.rotation.y = 0.12; scene.add(monitor);
+box(1.8, 0.06, 1.1, M.aluDark, 0, 0.03, 0, monitor, 0.025);
+box(0.3, 2.1, 0.16, M.aluDark, 0, 1.05, -0.25, monitor, 0.04);
+box(6.3, 3.7, 0.2, M.black, 0, 2.6, 0, monitor, 0.06);
+const screenMesh = mesh(new THREE.PlaneGeometry(6.08, 3.42), new THREE.MeshBasicMaterial({ map: screenTex, color: 0xdddddd }), monitor, 0, 2.62, 0.102);
+box(6.0, 0.04, 0.04, rgb(2.4), 0, 0.78, -0.12, monitor);
+drawScreen('off');
+
+// keyboard
+const kb = new THREE.Group(); kb.position.set(-4.1, 0, -0.35); kb.rotation.y = 0.04; scene.add(kb);
+box(4.2, 0.14, 1.35, std(0x1a1c23, .5, .4), 0, 0.07, 0, kb, 0.05);
+const keyGeo = new RoundedBoxGeometry(0.22, 0.09, 0.22, 2, 0.03);
+const keys = new THREE.InstancedMesh(keyGeo, std(0x262932, .55, .1), 17 * 5);
+let ki = 0; const dm = new THREE.Object3D();
+for (let r = 0; r < 5; r++) for (let c = 0; c < 17; c++) { dm.position.set(-1.92 + c * 0.24, 0.17, -0.5 + r * 0.25); dm.updateMatrix(); keys.setMatrixAt(ki++, dm.matrix); }
+keys.castShadow = true; kb.add(keys);
+box(4.1, 0.02, 1.25, rgb(1.6), 0, 0.135, 0, kb);
+// mouse
+const mouse = mesh(new THREE.SphereGeometry(0.3, 24, 16), std(0x1a1c23, .4, .3), scene, -1.55, 0.12, -1.05); mouse.scale.set(0.85, 0.42, 1.25);
+// mug
+const mug = new THREE.Group(); mug.position.set(-6.8, 0, 1.6); scene.add(mug);
+mesh(new THREE.CylinderGeometry(0.3, 0.27, 0.6, 32), std(0xe8e3da, .35, 0), mug, 0, 0.3, 0);
+mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.08, 32), glow(0x38f5ff, 1.5), mug, 0, 0.42, 0);
+mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.02, 32), std(0x2a160b, .2, 0), mug, 0, 0.58, 0);
+const handle = mesh(new THREE.TorusGeometry(0.15, 0.04, 12, 24), std(0xe8e3da, .35, 0), mug, 0.32, 0.3, 0); handle.rotation.y = 0;
+// plant
+const plant = new THREE.Group(); plant.position.set(-7.1, 0, -1.4); scene.add(plant);
+mesh(new THREE.CylinderGeometry(0.42, 0.32, 0.75, 24), std(0xd9d2c6, .7, 0), plant, 0, 0.375, 0);
+mesh(new THREE.CylinderGeometry(0.39, 0.39, 0.05, 24), std(0x2b1c12, 1, 0), plant, 0, 0.73, 0);
+const leafM = std(0x2f7d4a, .6, 0), leafM2 = std(0x3f9a5c, .6, 0);
+for (let i = 0; i < 14; i++) {
+  const p = new THREE.Group(); p.position.y = 0.72; p.rotation.y = i * 2.4; plant.add(p);
+  const l = mesh(new THREE.SphereGeometry(0.5, 12, 8), i % 2 ? leafM : leafM2, p, 0, 0.55 + Math.random() * .3, 0.25);
+  l.scale.set(0.22, 0.95 + Math.random() * .4, 0.05); l.rotation.x = 0.45 + Math.random() * .35;
+}
+// lamp
+const lamp = new THREE.Group(); lamp.position.set(7.0, 0, -2.6); scene.add(lamp);
+const lampM = std(0x1b1c22, .4, .7);
+mesh(new THREE.CylinderGeometry(0.5, 0.55, 0.1, 32), lampM, lamp, 0, 0.05, 0);
+const pole = mesh(new THREE.CylinderGeometry(0.05, 0.05, 5.0, 12), lampM, lamp, 0, 2.5, 0);
+const arm = mesh(new THREE.CylinderGeometry(0.045, 0.045, 1.3, 12), lampM, lamp, -0.45, 5.05, 0.25); arm.rotation.z = PI / 2.4; arm.rotation.y = -0.5;
+const head = mesh(new THREE.ConeGeometry(0.42, 0.6, 32, 1, true), std(0x1b1c22, .4, .7, { side: THREE.DoubleSide }), lamp, -0.85, 5.0, 0.55); head.rotation.z = -0.7; head.rotation.x = -0.3;
+mesh(new THREE.SphereGeometry(0.16, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(4, 3, 2) }), lamp, -0.8, 4.85, 0.6);
+// screwdriver
+const sd = new THREE.Group(); sd.position.set(-5.6, 0.07, 2.85); sd.rotation.y = 0.5; scene.add(sd);
+const sdh = mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.6, 16), std(0x9b6bff, .4, .1), sd, 0, 0, 0); sdh.rotation.z = PI / 2;
+const sds = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 8), M.alu, sd, 0.65, 0, 0); sds.rotation.z = PI / 2;
+// screws
+for (let i = 0; i < 6; i++) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8), M.alu, scene, -4.95 + (i % 3) * 0.12, 0.04, 2.4 + Math.floor(i / 3) * 0.12);
+// dust
+const dustGeo = new THREE.BufferGeometry(); const dustN = 260; const dpos = new Float32Array(dustN * 3);
+for (let i = 0; i < dustN; i++) { dpos[i * 3] = (Math.random() - .5) * 14; dpos[i * 3 + 1] = Math.random() * 6; dpos[i * 3 + 2] = (Math.random() - .5) * 6; }
+dustGeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xffd9a8, size: 0.022, transparent: true, opacity: .3, depthWrite: false, blending: THREE.AdditiveBlending }));
+scene.add(dust);
+
+/* =========================================================
+   PC PARTS
+   ========================================================= */
+const fans = [];
+function buildFan(s = 1.2, opts = {}) {
+  const { frame = true, ring = true, depth = 0.25 } = opts;
+  const g = new THREE.Group(); const h = s / 2, bar = 0.07 * s;
+  if (frame) {
+    box(s, bar, depth, M.black, 0, h - bar / 2, 0, g); box(s, bar, depth, M.black, 0, -h + bar / 2, 0, g);
+    box(bar, s, depth, M.black, h - bar / 2, 0, 0, g); box(bar, s, depth, M.black, -h + bar / 2, 0, 0, g);
+    const sh = mesh(new THREE.CylinderGeometry(h * .93, h * .93, depth, 40, 1, true), std(0x0d0e12, .45, .35, { side: THREE.DoubleSide }), g); sh.rotation.x = PI / 2;
+    for (let i = 0; i < 4; i++) { const c = mesh(new THREE.CylinderGeometry(0.03 * s, 0.03 * s, depth * .9, 8), M.black, g); c.rotation.x = PI / 2; c.position.set((i % 2 ? 1 : -1) * h * .82, (i < 2 ? 1 : -1) * h * .82, 0); }
+  }
+  const rotor = new THREE.Group(); g.add(rotor);
+  cylZ(0.17 * s, depth * .7, std(0x15171d, .4, .4), rotor, 0, 0, 0, 24);
+  const bm = std(0x22252e, .35, .2, { transparent: true, opacity: .93, side: THREE.DoubleSide });
+  for (let i = 0; i < 9; i++) {
+    const p = new THREE.Group(); p.rotation.z = i * PI * 2 / 9; rotor.add(p);
+    const b = box(0.32 * s, 0.15 * s, 0.012, bm, 0.33 * s, 0, 0, p); b.rotation.x = 0.55; b.rotation.z = 0.25;
+  }
+  if (ring) {
+    const rm = rgb(3.2);
+    const t1 = mesh(new THREE.TorusGeometry(h * .9, 0.016 * s, 8, 48), rm, g, 0, 0, depth / 2 - 0.01); t1.castShadow = false;
+    const t2 = mesh(new THREE.TorusGeometry(0.17 * s, 0.012 * s, 8, 24), rm, rotor, 0, 0, depth * .36); t2.castShadow = false;
+  }
+  g.userData.rotor = rotor; fans.push(g);
+  return g;
+}
+
+function buildBoard() {
+  const g = new THREE.Group();
+  const pcbTop = std(0xffffff, .5, .25, { map: mbTex });
+  mesh(new THREE.BoxGeometry(BW, BH, 0.03), faceMats(M.pcb, pcbTop), g);
+  const S = 0.015;
+  const hs = std(0x2d313b, .32, .9);
+  // socket
+  box(0.54, 0.54, 0.03, M.steel, 0.15, 0.75, S + 0.015, g, 0.01);
+  box(0.42, 0.42, 0.01, M.gold, 0.15, 0.75, S + 0.022, g);
+  const lever = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.56, 8), M.alu, g, 0.45, 0.75, S + 0.03);
+  // VRM
+  box(0.22, 0.82, 0.2, hs, -0.42, 0.78, S + 0.1, g, 0.025);
+  box(0.62, 0.2, 0.2, hs, 0.15, 1.22, S + 0.1, g, 0.025);
+  for (let i = 0; i < 6; i++) box(0.18, 0.012, 0.02, M.aluDark, -0.42, 0.45 + i * 0.12, S + 0.205, g);
+  // IO shroud
+  box(0.38, 1.25, 0.32, M.black, -1.02, 0.72, S + 0.16, g, 0.03);
+  box(0.02, 1.0, 0.02, rgb(), -0.82, 0.72, S + 0.3, g);
+  // RAM slots
+  const ramX = { A1: 0.66, A2: 0.76, B1: 0.86, B2: 0.96 };
+  Object.values(ramX).forEach((x, i) => {
+    box(0.05, 1.3, 0.06, i % 2 ? M.slotGrey : M.plastic, x, 0.72, S + 0.03, g);
+    box(0.055, 0.06, 0.09, M.plastic, x, 0.72 + 0.68, S + 0.045, g); box(0.055, 0.06, 0.09, M.plastic, x, 0.72 - 0.68, S + 0.045, g);
+  });
+  // M.2
+  box(0.06, 0.24, 0.04, M.black, -0.45, -0.25, S + 0.02, g);
+  cylZ(0.025, 0.03, M.gold, g, 0.38, -0.25, S + 0.015, 10);
+  // PCIe
+  box(0.9, 0.075, 0.08, M.alu, -0.4, -0.55, S + 0.04, g); box(0.86, 0.025, 0.082, M.black, -0.4, -0.55, S + 0.042, g);
+  box(0.9, 0.075, 0.08, M.plastic, -0.4, -1.22, S + 0.04, g);
+  box(0.26, 0.07, 0.07, M.plastic, -0.77, -0.93, S + 0.035, g);
+  // chipset
+  box(0.56, 0.52, 0.09, hs, 0.62, -0.95, S + 0.045, g, 0.02);
+  box(0.3, 0.02, 0.01, rgb(), 0.62, -0.95, S + 0.095, g);
+  // connectors
+  box(0.1, 0.56, 0.12, M.black, 1.14, 0.4, S + 0.06, g);
+  box(0.34, 0.1, 0.12, M.black, -0.72, 1.43, S + 0.06, g);
+  box(0.1, 0.04, 0.07, M.black, 0.62, 1.42, S + 0.035, g);
+  box(0.26, 0.07, 0.07, M.black, 0.92, -1.42, S + 0.035, g);
+  box(0.1, 0.04, 0.07, M.black, -0.2, -1.45, S + 0.035, g);
+  for (let i = 0; i < 4; i++) box(0.08, 0.11, 0.07, M.black, 1.15, -0.4 - i * 0.14, S + 0.035, g);
+  // caps & battery
+  for (let i = 0; i < 10; i++) cylZ(0.03, 0.08, M.aluDark, g, -0.2 + (i % 5) * 0.09, 0.3 + Math.floor(i / 5) * 0.08 - 0.05, S + 0.04, 10);
+  cylZ(0.1, 0.02, M.alu, g, -0.05, -0.92, S + 0.01, 24);
+  // standoff holes
+  [[-1.1, 1.4], [1.1, 1.4], [-1.1, -1.4], [1.1, -1.4], [-1.1, 0], [1.1, 0.0], [0.15, -1.4], [0.15, 1.4]].forEach(([x, y]) => cylZ(0.035, 0.01, M.alu, g, x, y, S + 0.005, 12));
+  g.userData.ramX = ramX;
+  return g;
+}
+
+function buildCPU() {
+  const g = new THREE.Group();
+  box(0.4, 0.4, 0.02, M.green, 0, 0, 0.01, g);
+  mesh(new THREE.BoxGeometry(0.32, 0.32, 0.03), faceMats(M.alu, std(0xffffff, .3, .7, { map: ihsTex })), g, 0, 0, 0.035);
+  return g;
+}
+function buildRAM() {
+  const g = new THREE.Group();
+  box(0.018, 1.25, 0.3, M.green, 0, 0, 0.15, g);
+  box(0.045, 1.26, 0.27, std(0x2a2d37, .3, .85), 0, 0, 0.175, g, 0.01);
+  box(0.047, 0.5, 0.06, std(0x9b6bff, .3, .6), 0, 0.25, 0.12, g);
+  box(0.04, 1.2, 0.05, rgb(3.5), 0, 0, 0.33, g, 0.01);
+  box(0.02, 1.15, 0.03, M.gold, 0, 0, 0.015, g);
+  return g;
+}
+function buildM2() {
+  const g = new THREE.Group();
+  box(0.8, 0.22, 0.012, std(0x0f1a12, .5, .2), 0, 0, 0.006, g);
+  box(0.06, 0.2, 0.013, M.gold, -0.39, 0, 0.006, g);
+  mesh(new THREE.BoxGeometry(0.62, 0.2, 0.008), faceMats(M.black, std(0xffffff, .4, .2, { map: ssdTex })), g, 0.04, 0, 0.018);
+  return g;
+}
+function buildCooler() {
+  const g = new THREE.Group();
+  box(0.42, 0.42, 0.06, M.copper, 0, 0, 0.03, g, 0.01);
+  box(0.46, 0.5, 0.08, M.alu, 0, 0, 0.1, g, 0.01);
+  [-0.3, -0.1, 0.1, 0.3].forEach(y => { const p = mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.5, 12), M.copper, g, 0, y, 0.82); p.rotation.x = PI / 2; });
+  for (let i = 0; i < 34; i++) box(0.5, 1.2, 0.01, M.alu, 0, 0, 0.44 + i * 0.033, g);
+  box(0.54, 1.24, 0.06, M.black, 0, 0, 1.58, g, 0.02);
+  box(0.02, 1.0, 0.02, rgb(4), 0.2, 0, 1.615, g);
+  const f = buildFan(1.15, {}); f.rotation.y = PI / 2; f.position.set(0.38, 0, 1.0); g.add(f);
+  g.userData.fan = f;
+  return g;
+}
+function buildGPU() {
+  const g = new THREE.Group();
+  const shM = std(0x1d2027, .35, .6);
+  mesh(new RoundedBoxGeometry(3.0, 0.42, 1.25, 3, 0.05), [shM, shM, shM, shM, std(0xffffff, .35, .5, { map: gpuTex }), shM], g, 0, -0.08, 0);
+  box(2.92, 0.03, 1.2, M.green, 0, 0.17, 0, g);
+  box(3.0, 0.03, 1.25, std(0x2b2f38, .3, .9), 0, 0.2, 0, g, 0.01);
+  box(2.5, 0.05, 0.025, rgb(2.4), 0.15, 0.05, 0.63, g);
+  [-0.95, 0.05, 1.05].forEach(x => {
+    const f = buildFan(0.85, { frame: false, depth: 0.12 }); f.rotation.x = PI / 2; f.position.set(x, -0.3, 0); g.add(f);
+    const ring = mesh(new THREE.TorusGeometry(0.44, 0.02, 8, 40), M.aluDark, g, x, -0.3, 0); ring.rotation.x = PI / 2;
+  });
+  box(0.025, 0.58, 1.25, M.alu, -1.5, 0.0, 0.0, g);
+  for (let i = 0; i < 4; i++) box(0.03, 0.1, 0.16, M.black, -1.52, -0.1, -0.38 + i * 0.26, g);
+  box(0.9, 0.04, 0.04, M.gold, -0.65, 0.17, -0.64, g);
+  box(0.32, 0.12, 0.08, M.black, 0.9, 0.1, 0.62, g);
+  return g;
+}
+function buildPSU() {
+  const g = new THREE.Group();
+  const bm = std(0x101115, .55, .4);
+  mesh(new RoundedBoxGeometry(1.5, 0.86, 1.4, 3, 0.04), [bm, bm, bm, bm, std(0xffffff, .5, .3, { map: psuTex }), bm], g);
+  const f = buildFan(1.1, { frame: false, ring: false, depth: 0.08 }); f.rotation.x = PI / 2; f.position.set(0, -0.4, 0); g.add(f);
+  for (let i = 0; i < 9; i++) box(1.15, 0.01, 0.015, M.aluDark, 0, -0.44, -0.55 + i * 0.137, g);
+  for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) box(0.02, 0.14, 0.18, M.plastic, 0.755, -0.15 + r * 0.25, -0.5 + c * 0.24, g);
+  box(0.02, 0.08, 1.0, glow(0xffc24d, 2), 0.755, 0.33, 0, g);
+  return g;
+}
+function buildUSB() {
+  const g = new THREE.Group();
+  box(0.16, 0.08, 0.44, std(0x9b6bff, .35, .3), 0, 0, 0.3, g, 0.02);
+  box(0.12, 0.045, 0.18, M.alu, 0, 0, 0.0, g);
+  box(0.1, 0.01, 0.12, glow(0x38f5ff, 3), 0, 0.045, 0.32, g);
+  return g;
+}
+
+/* ---------- CASE ---------- */
+const pcCase = new THREE.Group(); pcCase.position.set(3.0, 0.1, -0.8); scene.add(pcCase);
+const caseM = std(0x1a1c23, .42, .75), caseIn = std(0x24262e, .55, .5);
+box(4.4, 4.6, 0.05, caseIn, 0, 2.3, -1.1, pcCase);
+box(4.4, 0.05, 2.25, caseM, 0, 4.6, 0, pcCase);
+box(4.4, 0.05, 2.25, caseM, 0, 0.0, 0, pcCase);
+box(0.06, 4.65, 2.25, std(0x0c0d11, .5, .5), 2.2, 2.3, 0, pcCase);
+box(0.05, 4.6, 2.25, caseM, -2.2, 2.3, 0, pcCase);
+// frame pillars on glass side
+[[2.18, 2.3, 1.1, .06, 4.65, .06], [-2.18, 2.3, 1.1, .06, 4.65, .06], [0, 4.6, 1.1, 4.4, .06, .06], [0, 0, 1.1, 4.4, .06, .06]].forEach(a => box(a[3], a[4], a[5], caseM, a[0], a[1], a[2], pcCase));
+// feet
+[[-1.9, -0.8], [1.9, -0.8], [-1.9, 0.8], [1.9, 0.8]].forEach(([x, z]) => box(0.5, 0.1, 0.3, M.rubber, x, -0.06, z, pcCase, 0.03));
+// PSU shroud
+const shroudM = std(0x16171d, .45, .7);
+box(3.95, 0.04, 2.15, shroudM, -0.22, 1.0, 0, pcCase);
+box(2.6, 1.0, 0.04, shroudM, 0.9, 0.5, 1.06, pcCase);
+box(2.4, 0.03, 0.02, glow(0x9b6bff, 3), 0.9, 0.98, 1.085, pcCase);
+box(0.4, 0.05, 0.28, M.rubber, 0.72, 1.01, -0.8, pcCase);
+// grommets
+[1.6, 2.6, 3.6].forEach(y => box(0.18, 0.55, 0.02, M.rubber, 0.72, y, -1.07, pcCase, 0.008));
+// rear slot covers
+const slotCovers = [];
+for (let i = 0; i < 7; i++) slotCovers.push(box(0.03, 0.16, 1.2, M.steel, -2.21, 2.3 - i * 0.2, -0.3, pcCase));
+// rear exterior details
+const portBlack = std(0x050507, .6, .2), usbBlue = std(0x1f6fff, .4, .1, { emissive: 0x0a2a80, emissiveIntensity: .6 });
+box(0.02, 1.25, 0.32, std(0x2b2e36, .4, .8), -2.235, 3.49, -0.79, pcCase);
+for (let i = 0; i < 6; i++) box(0.03, 0.06, 0.13, i % 2 ? usbBlue : portBlack, -2.25, 3.95 - i * 0.12, -0.84, pcCase);
+box(0.03, 0.09, 0.16, portBlack, -2.25, 3.18, -0.8, pcCase);
+box(0.03, 0.11, 0.12, std(0xd8dce4, .4, .3), -2.25, 3.03, -0.8, pcCase);
+['#5dff9c', '#ff4fd8', '#38f5ff'].forEach((c, i) => cylZ(0.025, 0.03, std(c, .4, 0), pcCase, -2.25, 2.9, -0.9 + i * 0.07).rotation.set(0, 0, PI / 2));
+const gpuRear = new THREE.Group(); gpuRear.position.set(-2.25, 2.02, -0.3); gpuRear.visible = false; pcCase.add(gpuRear);
+box(0.02, 0.5, 1.2, std(0x9aa0aa, .3, 1), 0, 0, 0, gpuRear);
+for (let i = 0; i < 4; i++) box(0.03, 0.08, 0.15, portBlack, -0.01, 0.1, -0.4 + i * 0.27, gpuRear);
+for (let i = 0; i < 14; i++) box(0.03, 0.12, 0.02, portBlack, -0.01, -0.12, -0.5 + i * 0.075, gpuRear);
+box(0.02, 0.6, 0.9, std(0x101115, .5, .4), -2.235, 0.5, -0.25, pcCase);
+box(0.03, 0.18, 0.26, portBlack, -2.25, 0.55, -0.45, pcCase);
+box(0.03, 0.1, 0.08, std(0xff4d6d, .4, .1), -2.25, 0.55, -0.15, pcCase);
+const grill = mesh(new THREE.TorusGeometry(0.5, 0.012, 6, 48), M.steel, pcCase, -2.235, 3.65, 0.0); grill.rotation.y = PI / 2;
+mesh(new THREE.TorusGeometry(0.3, 0.012, 6, 40), M.steel, pcCase, -2.235, 3.65, 0.0).rotation.y = PI / 2;
+const rearLight = new THREE.PointLight(0xcfd8ff, 7, 7, 1.4); rearLight.position.set(-4.2, 3.2, 1.2); pcCase.add(rearLight);
+// front fans (preinstalled)
+const frontFans = [];
+[1.05, 2.3, 3.55].forEach(y => { const f = buildFan(1.2); f.rotation.y = -PI / 2; f.position.set(1.98, y, 0.0); pcCase.add(f); frontFans.push(f); });
+// top I/O
+const pwrBtn = cylZ(0.11, 0.05, M.aluDark, pcCase, 1.85, 4.64, 0.6, 32); pwrBtn.rotation.x = 0;
+const pwrRing = mesh(new THREE.TorusGeometry(0.11, 0.012, 8, 32), glow(0x38f5ff, 0.3), pcCase, 1.85, 4.665, 0.6); pwrRing.rotation.x = PI / 2;
+box(0.16, 0.03, 0.08, std(0x050507), 1.4, 4.63, 0.6, pcCase);
+box(0.16, 0.03, 0.08, std(0x050507), 1.15, 4.63, 0.6, pcCase);
+cylZ(0.04, 0.03, std(0x050507), pcCase, 0.95, 4.63, 0.6).rotation.x = 0;
+const caseLight = new THREE.PointLight(0x38f5ff, 0, 6, 1.5); caseLight.position.set(0, 2.6, 0.2); pcCase.add(caseLight);
+const workLight = new THREE.PointLight(0xe6ecff, 9, 9, 1.4); workLight.position.set(0.3, 3.4, 0.8); pcCase.add(workLight);
+const workLight2 = new THREE.PointLight(0xc8c0ff, 2.5, 6, 1.4); workLight2.position.set(-1.2, 1.6, 0.8); pcCase.add(workLight2);
+// glass panel
+const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x223044, transparent: true, opacity: 0.18, roughness: 0.08, metalness: 0, envMapIntensity: 0.35, specularIntensity: 0.4, depthWrite: false, side: THREE.DoubleSide });
+const glass = new THREE.Mesh(new THREE.BoxGeometry(4.3, 4.55, 0.025), glassMat); glass.position.set(0, 2.3, 4.5); glass.visible = false; pcCase.add(glass);
+
+/* ---------- parts instances & desk placement ---------- */
+const board = buildBoard();
+const parts = {
+  board, cpu: buildCPU(), ram1: buildRAM(), ram2: buildRAM(), m2: buildM2(), cooler: buildCooler(),
+  gpu: buildGPU(), psu: buildPSU(), fan: buildFan(1.2), usb: buildUSB(),
+};
+const UP = new THREE.Euler(-PI / 2, 0, 0);
+function place(obj, x, y, z, e = UP, ry = 0) { obj.position.set(x, y, z); obj.rotation.copy(e); if (ry) obj.rotateOnWorldAxis(new V3(0, 1, 0), ry); scene.add(obj); obj.userData.home = { p: obj.position.clone(), q: obj.quaternion.clone() }; obj.traverse(o => { if (o.isMesh) { o.castShadow = true; } }); }
+// mobo box
+const mbBox = mesh(new RoundedBoxGeometry(2.75, 0.3, 3.3, 2, 0.02), [M.black, M.black, std(0x15171e, .6, .2), M.black, std(0xffffff, .5, .2, { map: boxTex }), M.black], scene, -1.0, 0.15, 1.4);
+place(board, -1.0, 0.315, 1.4);
+// cpu clamshell
+mesh(new RoundedBoxGeometry(0.62, 0.1, 0.62, 2, 0.03), std(0x99aaff, .1, 0, { transparent: true, opacity: .18 }), scene, -3.5, 0.05, 2.55).castShadow = false;
+place(parts.cpu, -3.5, 0.03, 2.55);
+place(parts.ram1, -4.75, 0.0, 1.35); place(parts.ram2, -4.5, 0.0, 1.35);
+place(parts.m2, -3.45, 0.03, 1.4);
+place(parts.cooler, 1.35, 0.0, 2.35);
+place(parts.gpu, 4.6, 0.30, 2.25, new THREE.Euler(0, 0, 0));
+place(parts.psu, 6.45, 0.43, -0.25, new THREE.Euler(0, 0, 0));
+place(parts.fan, 7.0, 0.13, 2.1);
+place(parts.usb, 2.4, 0.04, 2.7, new THREE.Euler(0, 0, 0), 0.6);
+parts.usb.rotation.set(0, 0.6, 0); parts.usb.userData.home.q = parts.usb.quaternion.clone();
+
+/* =========================================================
+   TWEENS / CAMERA
+   ========================================================= */
+const tweens = [];
+const ease = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+function tween(dur, fn, e = ease) { return new Promise(res => tweens.push({ t: 0, dur, fn, e, res })); }
+function runTweens(dt) {
+  for (let i = tweens.length - 1; i >= 0; i--) {
+    const tw = tweens[i]; tw.t += dt; const k = Math.min(1, tw.t / tw.dur); tw.fn(tw.e(k), k);
+    if (k >= 1) { tweens.splice(i, 1); tw.res(); }
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function flyCam(c, dur = 1.5) {
+  const p0 = camera.position.clone(), t0 = controls.target.clone(); const t1 = new V3(...c.t);
+  const fit = camera.aspect < 1.75 ? Math.min(1.7, 1.75 / camera.aspect) : 1;
+  const p1 = new V3(...c.p).sub(t1).multiplyScalar(fit).add(t1);
+  return tween(dur, k => { camera.position.lerpVectors(p0, p1, k); controls.target.lerpVectors(t0, t1, k); });
+}
+const CAM = {
+  intro: { p: [0.3, 8.2, 12.2], t: [0.3, 0.9, 0.0] },
+  desk: { p: [-1.9, 7.4, 8.6], t: [-1.9, 0.2, 1.3] },
+  board: { p: [-1.0, 4.6, 5.0], t: [-1.0, 0.3, 1.1] },
+  ram: { p: [-0.25, 3.3, 3.2], t: [-0.25, 0.35, 0.75] },
+  case: { p: [2.5, 3.8, 8.4], t: [2.3, 2.3, -1.0] },
+  caseLow: { p: [2.6, 2.4, 6.4], t: [2.2, 1.2, -1.0] },
+  rear: { p: [-3.4, 4.2, 1.6], t: [0.8, 2.3, -0.8] },
+  top: { p: [6.4, 8.4, 4.2], t: [4.6, 4.7, -0.3] },
+  monitor: { p: [-4.0, 3.0, 4.2], t: [-4.2, 2.5, -2.6] },
+  wide: { p: [1.0, 7.5, 11.5], t: [0.5, 1.6, -0.6] },
+};
+
+function worldOf(parent, pos, quat) {
+  parent.updateMatrixWorld(true);
+  const m = new THREE.Matrix4().compose(new V3(...pos), quat, new V3(1, 1, 1)).premultiply(parent.matrixWorld);
+  const p = new V3(), q = new THREE.Quaternion(), s = new V3(); m.decompose(p, q, s); return { p, q };
+}
+function moveTo(obj, p, q, dur, arc = 0) {
+  scene.attach(obj);
+  const p0 = obj.position.clone(), q0 = obj.quaternion.clone();
+  return tween(dur, k => { obj.position.lerpVectors(p0, p, k); obj.position.y += Math.sin(PI * k) * arc; obj.quaternion.slerpQuaternions(q0, q, k); });
+}
+
+/* =========================================================
+   AUDIO
+   ========================================================= */
+let AC = null, muted = false;
+function tone(f, d = .12, type = 'sine', v = .07, f2) {
+  if (!AC || muted) return; const t = AC.currentTime;
+  const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d + .03);
+}
+const sfx = {
+  click: () => tone(1200, .05, 'square', .02),
+  pick: () => tone(320, .28, 'sine', .07, 760),
+  place: () => { tone(140, .14, 'square', .06, 70); setTimeout(() => tone(1500, .06, 'triangle', .04), 70); },
+  ok: () => [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .2, 'triangle', .06), i * 70)),
+  err: () => { tone(200, .25, 'sawtooth', .045, 100); },
+  xp: () => tone(1320, .12, 'sine', .04, 1760),
+  power: () => { tone(55, 1.8, 'sawtooth', .04, 220); setTimeout(() => tone(880, .15, 'sine', .06), 900); },
+  chime: () => [392, 523, 659, 784, 1047].forEach((f, i) => setTimeout(() => tone(f, .6, 'sine', .05), i * 120)),
+  beep: () => tone(1000, .2, 'square', .04),
+};
+$('#mute').onclick = () => { muted = !muted; $('#mute').textContent = muted ? '🔇' : '🔊'; };
+
+/* =========================================================
+   UI HELPERS
+   ========================================================= */
+const G = { xp: 0, mist: 0, t0: 0, step: -1, phase: '', busy: true, powered: false, held: null, holdBase: null, holdN: null, firstTry: true, free: false };
+function addXP(n, label) {
+  G.xp += n; $('#xp').textContent = G.xp; sfx.xp();
+  toast(`+${n} XP${label ? ' · ' + label : ''}`, 'xp', 1600);
+}
+function mistake(text) { G.mist++; G.firstTry = false; $('#mist').textContent = G.mist; sfx.err(); toast(text, 'err', 5200); }
+function toast(html, type = '', ms = 3200) {
+  const d = document.createElement('div'); d.className = 'toast ' + type; d.innerHTML = html; $('#toasts').appendChild(d);
+  while ($('#toasts').children.length > 3) $('#toasts').firstChild.remove();
+  setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 400); }, ms);
+}
+function setObjective(text, small = 'Задание') { $('#objText').innerHTML = text; $('#objSmall').textContent = small; }
+const markers = new Map();
+function marker(id, getPos, label, onClick, cls = '') {
+  removeMarker(id);
+  const el = document.createElement('div'); el.className = 'mk ' + cls; el.innerHTML = `<span>${label}</span><div class="dot"></div>`;
+  el.onclick = e => { e.stopPropagation(); if (!G.busy) { sfx.click(); onClick && onClick(); } };
+  $('#markers').appendChild(el); markers.set(id, { el, getPos });
+  return el;
+}
+function removeMarker(id) { const m = markers.get(id); if (m) { m.el.remove(); markers.delete(id); } }
+function clearMarkers() { for (const id of [...markers.keys()]) removeMarker(id); }
+const _v = new V3();
+function updateMarkers() {
+  for (const m of markers.values()) {
+    _v.copy(m.getPos()).project(camera);
+    const vis = _v.z < 1 && Math.abs(_v.x) < 1.2 && Math.abs(_v.y) < 1.2;
+    m.el.style.display = vis ? '' : 'none';
+    m.el.style.left = ((_v.x * .5 + .5) * innerWidth) + 'px'; m.el.style.top = ((-_v.y * .5 + .5) * innerHeight) + 'px';
+  }
+}
+const boardW = (x, y, z) => () => board.localToWorld(new V3(x, y, z));
+const caseW = (x, y, z) => () => pcCase.localToWorld(new V3(x, y, z));
+const objW = (o, off = [0, 0, 0]) => () => o.localToWorld(new V3(...off));
+
+/* =========================================================
+   LESSON DATA
+   ========================================================= */
+const CHAPTERS = ['Сборка на столе', 'Корпус', 'Провода', 'Запуск', 'Windows'];
+const INFO = {
+  cpu: {
+    tag: 'req', name: 'Процессор', sub: 'CPU · Central Processing Unit · «мозг»', stats: [5, 5, 4],
+    what: 'Главный вычислитель. Выполняет инструкции всех программ: логику игр, физику, ИИ ботов, работу Windows, браузер и всё остальное.',
+    where: 'В <b>сокет</b> на материнской плате, ещё <b>до установки платы в корпус</b>: на столе удобнее и безопаснее. Совмести золотой треугольник на углу CPU с меткой на сокете, положи процессор <b>без давления</b> и закрой рычаг.',
+    affects: 'FPS в «процессорных» играх (стратегии, онлайн-шутеры, симуляторы), скорость компиляции, архивации и рендера, общую отзывчивость. Ядра отвечают за многозадачность, частота и кэш за скорость в играх.',
+    without: '<b>Нельзя.</b> Без процессора плата даже не пройдёт самотестирование (POST).',
+    tip: 'Сокет процессора и платы <b>обязан совпадать</b>: AM5 для Ryzen 7000/9000, LGA1700 или LGA1851 для Intel. Не трогай контакты сокета пальцами: погнутые пины означают дорогой ремонт.',
+    early: 'Процессор ставится первым, прямо на столе.',
+  },
+  m2: {
+    tag: 'req', name: 'SSD-накопитель M.2', sub: 'NVMe · PCIe · «долгая память»', stats: [1, 5, 2],
+    what: 'Накопитель: здесь будут храниться Windows, игры и файлы. NVMe M.2 работает напрямую через линии PCIe, поэтому он в 5–10 раз быстрее SATA SSD и в десятки раз быстрее жёсткого диска.',
+    where: 'В <b>верхний слот M.2</b> под процессором: он подключён напрямую к CPU и работает быстрее всех. Вставь планку под углом ~30°, прижми и закрепи винтиком или защёлкой.',
+    affects: 'Скорость загрузки Windows, игр и уровней, установку программ, общую «шустрость». <b>На FPS почти не влияет.</b>',
+    without: 'Без накопителя вообще нельзя: некуда ставить систему. Но вместо M.2 подойдёт <b>SATA SSD</b> (2,5") или жёсткий диск. HDD под систему в 2026 году очень медленный, лучше хранить на нём только файлы.',
+    tip: 'Если на слоте есть радиатор, <b>сними защитную плёнку с термопрокладки</b>. На некоторых платах занятый слот M.2 отключает пару SATA-портов, это написано в мануале.',
+    early: 'Ставь M.2, пока плата лежит на столе и до слота легко добраться.',
+  },
+  ram: {
+    tag: 'req', name: 'Оперативная память', sub: 'RAM · DDR5 · «рабочий стол процессора»', stats: [4, 4, 2],
+    what: 'Быстрая временная память. Здесь лежат данные запущенных программ и игр. Она в сотни раз быстрее SSD, но при выключении всё стирается.',
+    where: 'В слоты DIMM справа от сокета. Две планки ставят в <b>A2 и B2</b> (второй и четвёртый слот от процессора): так включается <b>двухканальный режим</b>. Открой защёлки, совмести вырез с ключом слота и вдави до щелчка.',
+    affects: '<b>Объём</b> определяет, сколько вкладок, программ и игр работает без тормозов: минимум 16 ГБ, оптимум для игр 32 ГБ. <b>Частота и тайминги</b> влияют на FPS, особенно у Ryzen. Двухканальный режим даёт до +20–30% в играх.',
+    without: '<b>Нельзя.</b> Без памяти плата пищит или зажигает индикатор DRAM и не стартует.',
+    tip: 'DDR4 и DDR5 несовместимы: вырез на них в разных местах. После сборки включи <b>XMP/EXPO</b> в BIOS, иначе память будет работать на заниженной частоте.',
+    early: 'Память ставится на материнку, пока та лежит на столе.',
+  },
+  paste: {
+    tag: 'req', name: 'Термопаста', sub: 'Thermal paste · «мост для тепла»', stats: [2, 1, 3],
+    what: 'Паста заполняет микронеровности между крышкой процессора и подошвой кулера. Воздух очень плохо проводит тепло, а паста в десятки раз лучше.',
+    where: '<b>Капля размером с горошину</b> в центр крышки CPU. Кулер сам распределит её при прижиме. Больше не значит лучше: лишняя паста вылезет по краям.',
+    affects: 'Температуру процессора: без пасты он греется на 20–40 °C сильнее и сбрасывает частоты (троттлит).',
+    without: 'Нельзя, <b>если на кулере нет заводской пасты</b>. На многих боксовых кулерах она уже нанесена. Тогда новую не добавляй.',
+    tip: 'Самая частая ошибка новичков: <b>забыть снять защитную плёнку</b> с подошвы кулера.',
+    early: 'Паста наносится перед установкой кулера.',
+  },
+  cooler: {
+    tag: 'req', name: 'Кулер процессора', sub: 'Tower air cooler · охлаждение CPU', stats: [3, 2, 3],
+    what: 'Башенный кулер: медные тепловые трубки уносят тепло от процессора в алюминиевые рёбра, а вентилятор их продувает.',
+    where: 'Поверх процессора, на крепёжную рамку. Винты затягивай <b>крест-накрест, понемногу</b>, чтобы прижим был ровным. Вентилятор ставь так, чтобы он <b>дул к задней стенке</b>, навстречу выдувному вентилятору.',
+    affects: 'Температуру CPU, а значит, как долго процессор держит высокие частоты (буст). Ещё от кулера зависит, насколько тихо работает ПК.',
+    without: '<b>Нельзя.</b> Без охлаждения CPU за секунды уйдёт в защиту и выключится. Альтернатива воздушному кулеру: СЖО (водяное охлаждение).',
+    tip: 'Перед покупкой проверь <b>высоту кулера</b>: в характеристиках корпуса есть максимум. Убедись, что высокие планки ОЗУ не упрутся в радиатор.',
+    early: 'Кулер ставится после процессора и термопасты.',
+  },
+  board: {
+    tag: 'req', name: 'Материнская плата', sub: 'Motherboard · ATX · «нервная система»', stats: [2, 3, 3],
+    what: 'Основа всего ПК. Соединяет процессор, память, накопители, видеокарту, USB, звук, сеть и распределяет питание.',
+    where: 'На <b>стойки (standoffs)</b> в корпусе. Разъёмы задней панели смотрят в заднюю стенку. Если заглушка I/O не встроена в плату, вставь её в корпус заранее. Плату крепят ~9 винтами, без перетяжки.',
+    affects: 'Совместимость с процессорами, количество M.2 и USB, качество питания (VRM) для мощных CPU, разгон памяти, Wi-Fi и Bluetooth.',
+    without: '<b>Нельзя.</b> Это фундамент: всё остальное подключается к ней.',
+    tip: 'Собирать «ядро» (CPU, RAM, M.2, кулер) на столе гораздо проще, чем в тесном корпусе. Опытные сборщики даже делают тестовый запуск прямо на коробке от платы.',
+    early: 'Плата ставится в корпус, когда на ней уже стоят процессор, память, SSD и кулер.',
+  },
+  psu: {
+    tag: 'req', name: 'Блок питания', sub: 'PSU · 850W · 80+ Gold', stats: [1, 1, 3],
+    what: 'Превращает 220 В из розетки в стабильные 12 В, 5 В и 3,3 В для всех компонентов. Дешёвый блок часто становится причиной внезапных перезагрузок и сгоревшего железа.',
+    where: 'В нижний отсек под кожухом. <b>Вентилятором вниз</b>, если в дне корпуса есть фильтр и ножки: так он берёт холодный воздух снаружи. Крепится 4 винтами к задней стенке.',
+    affects: 'Стабильность и долговечность всей системы. Тихий и качественный блок спокойно проработает 7–10 лет.',
+    without: '<b>Нельзя.</b> Без питания ничего не заработает.',
+    tip: 'Как прикинуть мощность: сложи потребление CPU и видеокарты и добавь 30–40% запаса. Бери сертификат <b>80+ Gold</b> и проверенный бренд. Модульный блок позволяет подключить только нужные кабели.',
+    early: 'Блок питания ставится в корпус после материнки, а ты пока собираешь плату.',
+  },
+  gpu: {
+    tag: 'dep', name: 'Видеокарта', sub: 'GPU · PCIe x16 · «художник»', stats: [5, 2, 3],
+    what: 'Рисует картинку: 3D-графику в играх, видео, рендер. Ещё её используют для нейросетей. Для игрового FPS это <b>самый важный компонент</b>.',
+    where: 'В <b>верхний слот PCIe x16</b>, ближайший к процессору: у него все 16 линий. Сначала сними 2–3 заглушки на задней стенке корпуса, вставь карту до щелчка защёлки и прикрути к корпусу.',
+    affects: 'FPS, разрешение и настройки графики, трассировку лучей, скорость в Blender, монтаже и нейросетях.',
+    without: '<b>Можно</b>, если у процессора есть <b>встроенная графика</b> (Ryzen с «G» или серии 7000+, Intel без «F»). Для учёбы, офиса и кино её хватит. Для современных игр нужна видеокарта.',
+    tip: 'Тяжёлой карте нужен держатель (anti-sag), иначе со временем она провиснет. Перед покупкой проверь <b>длину карты</b> и место в корпусе.',
+    early: 'Видеокарта вставляется в слот PCIe, а он появится в корпусе только вместе с материнкой.',
+  },
+  fan: {
+    tag: 'rec', name: 'Корпусный вентилятор', sub: 'Case fan 120mm · выдув', stats: [2, 1, 1],
+    what: 'Двигает воздух через корпус. Спереди уже стоят 3 вентилятора на <b>вдув</b> (холодный воздух внутрь). Задний <b>выдувает</b> горячий воздух наружу.',
+    where: 'На заднюю стенку рядом с кулером CPU. Направление видно по рамке: сторона с распорками и наклейкой смотрит туда, куда дует воздух, то есть <b>наружу</b>.',
+    affects: 'Температуру всех компонентов и шум. Правильный поток воздуха: спереди и снизу вдув, сзади и сверху выдув.',
+    without: 'Технически можно, но в закрытом корпусе всё будет перегреваться, а остальные вентиляторы станут громче.',
+    tip: 'Если вдува чуть больше, чем выдува (положительное давление), пыль идёт только через фильтры, и внутри корпуса чище.',
+    early: 'Сначала поставь крупное железо, вентилятор потом.',
+  },
+  cables: {
+    tag: 'req', name: 'Подключение проводов', sub: 'Cables · питание и сигналы', stats: [3, 2, 5],
+    what: 'Самый «опасный» этап: перепутанные или недовставленные разъёмы дают 80% проблем «собрал, а он не включается».',
+    where: '24-pin ATX справа на плате, 8-pin EPS сверху слева, PCIe-питание на верхний торец видеокарты, вентилятор кулера в CPU_FAN, провода корпуса в F_PANEL внизу справа.',
+    affects: 'Запустится ли ПК вообще и насколько он будет стабилен. Аккуратная укладка за поддоном улучшает обдув.',
+    without: 'Без питания платы, процессора и видеокарты ПК не запустится. Без F_PANEL не будет работать кнопка включения.',
+    tip: 'Каждый разъём вставляй <b>до щелчка защёлки</b>. EPS (CPU) и PCIe (GPU) выглядят похоже, но отличаются ключами: с силой не пихай!',
+    early: 'Провода подключаются, когда всё железо стоит на местах.',
+  },
+  usb: {
+    tag: 'req', name: 'Загрузочная флешка', sub: 'USB · установщик Windows 11', stats: [1, 1, 2],
+    what: 'Флешка с установщиком Windows. Именно с неё компьютер загрузится в первый раз, потому что SSD пока пустой.',
+    where: 'В USB-порт на корпусе или сзади на материнке. Задние порты надёжнее: они распаяны прямо на плате.',
+    affects: 'Возможность установить систему. Нужна флешка от 8 ГБ, все данные на ней сотрутся.',
+    without: 'Без установщика систему не поставить. Иногда используют сетевую установку или второй ПК, но флешка проще всего.',
+    tip: 'Делай флешку только из <b>официального ISO</b>: Media Creation Tool от Microsoft или Rufus. Сомнительные «сборки» с торрентов часто содержат вирусы.',
+    early: 'Флешка понадобится перед первым включением.',
+  },
+};
+const QUIZ = {
+  cpu: { q: 'Что ОБЯЗАТЕЛЬНО проверить при выборе процессора к материнской плате?', o: ['Совпадение сокета и поддержку чипсетом', 'Цвет текстолита платы', 'Количество USB-портов', 'Размер коробки процессора'], a: 0, e: 'Сокет (AM5, LGA1700, LGA1851…) должен совпадать физически, а чипсет и BIOS должны поддерживать конкретное поколение CPU. Иначе процессор просто не встанет или плата его не увидит.' },
+  m2: { q: 'Почему NVMe SSD быстрее SATA SSD?', o: ['Он меньше по размеру', 'Работает напрямую через линии PCIe, а не через старый интерфейс SATA', 'В нём больше кэша', 'Его прикручивают винтиком'], a: 1, e: 'SATA III упирается в ~550 МБ/с. NVMe по PCIe 4.0 выдаёт ~7000 МБ/с, по PCIe 5.0 больше 12 000 МБ/с, а задержки у него гораздо ниже.' },
+  ram: { q: 'Две планки по 16 ГБ стоят в A2 и B2. Что это даёт?', o: ['Объём удвоится до 64 ГБ', 'Двухканальный режим и вдвое большую пропускную способность', 'Ничего, это просто для красоты', 'Компьютер будет потреблять меньше энергии'], a: 1, e: 'Объём остаётся 32 ГБ, зато процессор читает из двух каналов одновременно. В играх это заметно: прирост до 20–30% FPS.' },
+  paste: { q: 'Что будет, если забыть снять плёнку с подошвы кулера?', o: ['Ничего страшного', 'Процессор будет перегреваться и сбрасывать частоты', 'Кулер будет громче щёлкать', 'Плёнка расплавится и станет термопастой'], a: 1, e: 'Плёнка работает как теплоизолятор. CPU быстро упрётся в 95–100 °C, начнёт троттлить, а в тяжёлых случаях будет выключаться.' },
+  cooler: { q: 'Куда должен дуть вентилятор башенного кулера?', o: ['В стекло боковой крышки', 'Вниз, на видеокарту', 'К задней стенке, по общему потоку воздуха', 'Без разницы'], a: 2, e: 'Воздух идёт спереди назад: передние вентиляторы вдувают, кулер CPU передаёт поток дальше, задний вентилятор выбрасывает его наружу. Получается ровный «туннель».' },
+  board: { q: 'Зачем под материнской платой нужны стойки (standoffs)?', o: ['Для красоты', 'Чтобы плата не касалась металла корпуса и не было замыкания', 'Чтобы плата лучше охлаждалась водой', 'Они не нужны'], a: 1, e: 'Снизу у платы тысячи паяных контактов. Касание металлического поддона приведёт к короткому замыканию. Стойки держат плату на безопасном расстоянии и заземляют её через крепёжные отверстия.' },
+  psu: { q: 'Видеокарта потребляет ~300 Вт, процессор ~125 Вт. Какой блок питания разумнее взять?', o: ['450 Вт, хватит впритык', '550 Вт', '750–850 Вт 80+ Gold', '2000 Вт, чтобы точно хватило'], a: 2, e: 'Около 425 Вт под нагрузкой плюс короткие пики видеокарты и запас 30–40% дают как раз 750–850 Вт. Блок на 2000 Вт просто переплата.' },
+  gpu: { q: 'Можно ли собрать рабочий ПК без видеокарты?', o: ['Нет, никогда', 'Да, если у процессора есть встроенная графика', 'Да, с любым процессором', 'Только на Mac'], a: 1, e: 'Intel с буквой «F» (например, 14400F) и некоторые Ryzen не имеют встроенной графики, и без видеокарты картинки не будет. Процессоры со встройкой отлично подходят для офиса и учёбы.' },
+  fan: { q: 'Как должен работать задний корпусный вентилятор?', o: ['На вдув, чтобы затягивать воздух сзади', 'На выдув, выбрасывать горячий воздух наружу', 'Его лучше отключить', 'Поочерёдно в обе стороны'], a: 1, e: 'Горячий воздух от кулера CPU должен сразу уходить наружу. Если задний вентилятор будет вдувать, потоки столкнутся, и температура вырастет.' },
+  cables: { q: 'Чем опасен не до конца вставленный разъём питания видеокарты 12V-2x6 (16-pin)?', o: ['Ничем', 'Видеокарта будет тише', 'Из-за плохого контакта разъём может перегреться и оплавиться', 'Пропадёт звук'], a: 2, e: 'Через тонкие контакты идёт ток 40–50 А. При неполном контакте растёт сопротивление и разъём греется, иногда до оплавления. Вставляй до щелчка и не перегибай кабель у самого разъёма.' },
+  monitor: { q: 'Куда подключить кабель монитора, если в ПК есть видеокарта?', o: ['В HDMI на задней панели материнской платы', 'В DisplayPort или HDMI на самой видеокарте', 'Без разницы', 'В USB'], a: 1, e: 'Самая популярная ошибка новичков! Если подключить монитор к материнке, картинка пойдёт со встроенной графики или не появится совсем, а игры будут работать без видеокарты.' },
+  usb: { q: 'Как правильно сделать загрузочную флешку Windows?', o: ['Просто скопировать файл ISO на флешку', 'Записать официальный образ через Media Creation Tool или Rufus', 'Скачать «сборку» Windows с торрента', 'Флешка не нужна, Windows уже есть в BIOS'], a: 1, e: 'ISO — это образ диска. Если просто скопировать его как файл, флешка не станет загрузочной. Media Creation Tool сам скачает официальную Windows 11 и правильно её запишет.' },
+};
+
+/* Steps */
+const STEPS = [
+  { id: 'cpu', ch: 0, type: 'install', part: 'cpu', parent: () => board, pos: [0.15, 0.75, 0.022], hover: 0.7, cam: 'desk', camPut: 'board', inv: 'CPU',
+    pick: 'Возьми <b>процессор</b> из блистера на столе', put: 'Опусти процессор в <b>сокет</b> (совмести треугольники)' },
+  { id: 'm2', ch: 0, type: 'install', part: 'm2', parent: () => board, pos: [-0.03, -0.25, 0.04], hover: 0.6, cam: 'desk', camPut: 'board', inv: 'M.2',
+    pick: 'Возьми <b>SSD M.2</b> со стола', put: 'Вставь SSD в <b>слот M.2_1</b> под процессором' },
+  { id: 'ram', ch: 0, type: 'ram', part: 'ram1', cam: 'ram', inv: 'RAM',
+    pick: 'Возьми <b>планку оперативной памяти</b>', put: 'Выбери правильный <b>слот DIMM</b> для двух планок' },
+  { id: 'paste', ch: 0, type: 'paste', cam: 'board', inv: 'TIM', pick: 'Нанеси <b>термопасту</b> на процессор' },
+  { id: 'cooler', ch: 0, type: 'install', part: 'cooler', parent: () => board, pos: [0.15, 0.75, 0.072], hover: 0.9, cam: 'desk', inv: 'FAN',
+    pick: 'Возьми <b>кулер</b> (плёнку с подошвы уже сняли 😉)', put: 'Установи кулер на процессор' },
+  { id: 'board', ch: 1, type: 'install', part: 'board', parent: () => pcCase, pos: [-0.88, 2.775, -0.98], hover: 2.2, axis: 'z', cam: 'wide', camPut: 'case', inv: 'MB',
+    pick: 'Возьми собранную <b>материнскую плату</b>', put: 'Установи плату на стойки в корпусе' },
+  { id: 'psu', ch: 1, type: 'install', part: 'psu', parent: () => pcCase, pos: [-1.4, 0.5, -0.25], hover: 2.2, axis: 'z', cam: 'wide', camPut: 'caseLow', inv: 'PSU',
+    pick: 'Возьми <b>блок питания</b>', put: 'Поставь БП в нижний отсек <b>вентилятором вниз</b>' },
+  { id: 'gpu', ch: 1, type: 'install', part: 'gpu', parent: () => board, pos: [0.25, -0.75, 0.68], hover: 1.8, cam: 'wide', camPut: 'case', inv: 'GPU',
+    pick: 'Возьми <b>видеокарту</b>', put: 'Вставь видеокарту в <b>верхний PCIe x16</b>' },
+  { id: 'fan', ch: 1, type: 'install', part: 'fan', parent: () => pcCase, pos: [-2.04, 3.65, 0.0], euler: [0, PI / 2, 0], hover: 2.0, axis: 'z', cam: 'wide', camPut: 'case', inv: '120',
+    pick: 'Возьми <b>корпусный вентилятор</b>', put: 'Поставь его на <b>заднюю стенку</b> на выдув' },
+  { id: 'cables', ch: 2, type: 'cables', cam: 'case', inv: 'PWR', pick: 'Подключи все провода' },
+  { id: 'close', ch: 2, type: 'close', cam: 'case', inv: 'SIDE', pick: 'Закрой <b>боковую стеклянную крышку</b>' },
+  { id: 'monitor', ch: 3, type: 'monitor', cam: 'rear', inv: 'DP', pick: 'Подключи <b>монитор</b>' },
+  { id: 'usb', ch: 3, type: 'install', part: 'usb', parent: () => pcCase, pos: [1.15, 4.72, 0.6], euler: [-PI / 2, 0, 0], hover: 1.2, axis: 'y', cam: 'wide', camPut: 'top', inv: 'USB',
+    pick: 'Возьми <b>загрузочную флешку</b> со стола', put: 'Вставь флешку в <b>USB-порт</b> сверху корпуса' },
+  { id: 'power', ch: 3, type: 'power', cam: 'top', inv: '⏻', pick: 'Нажми <b>кнопку питания</b>!' },
+  { id: 'bios', ch: 3, type: 'bios', inv: 'BIOS', pick: 'Настрой <b>BIOS</b>' },
+  { id: 'windows', ch: 4, type: 'windows', inv: 'WIN', pick: 'Установи <b>Windows 11</b>' },
+];
+const INV_NAMES = { cpu: 'Процессор', m2: 'SSD M.2', ram: 'Оперативка ×2', paste: 'Термопаста', cooler: 'Кулер CPU', board: 'Плата → корпус', psu: 'Блок питания', gpu: 'Видеокарта', fan: 'Вентилятор', cables: 'Провода', close: 'Боковая крышка', monitor: 'Монитор', usb: 'Флешка', power: 'Включение', bios: 'BIOS', windows: 'Windows 11' };
+
+// pickable parts → step
+const PART_STEP = { cpu: 'cpu', m2: 'm2', ram1: 'ram', ram2: 'ram', cooler: 'cooler', board: 'board', psu: 'psu', gpu: 'gpu', fan: 'fan', usb: 'usb' };
+Object.entries(parts).forEach(([k, o]) => { o.userData.pickKey = k; });
+const installed = new Set();
+scene.traverse(o => {
+  if (!o.isMesh || !o.geometry) return;
+  if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+  if (o.geometry.boundingSphere.radius < 0.2) o.castShadow = false;
+});
+/* =========================================================
+   UI: chapters, inventory, info panel
+   ========================================================= */
+CHAPTERS.forEach((c, i) => { $('#chapBars').insertAdjacentHTML('beforeend', `<div class="chap"><i id="cb${i}"></i></div>`); $('#chapNames').insertAdjacentHTML('beforeend', `<span id="cn${i}">${String(i + 1).padStart(2, '0')} ${c}</span>`); });
+function renderChapters() {
+  CHAPTERS.forEach((c, i) => {
+    const st = STEPS.filter(s => s.ch === i); const done = st.filter(s => installed.has(s.id)).length;
+    $('#cb' + i).style.width = (done / st.length * 100) + '%';
+    $('#cn' + i).classList.toggle('on', STEPS[G.step] && STEPS[G.step].ch === i);
+  });
+}
+function renderInv() {
+  $('#invList').innerHTML = STEPS.map((s, i) => {
+    const st = installed.has(s.id) ? 'done' : (i === G.step ? 'cur' : '');
+    return `<div class="item ${st}" data-i="${i}"><div class="ic">${s.inv}</div><div><div class="nm">${INV_NAMES[s.id]}</div><div class="st">${st === 'done' ? '✓ готово' : st === 'cur' ? '▶ сейчас' : 'ожидает'}</div></div></div>`;
+  }).join('');
+  $('#invList').querySelectorAll('.item').forEach(el => el.onclick = () => {
+    const s = STEPS[+el.dataset.i];
+    if (G.free || installed.has(s.id)) { if (INFO[s.id]) showInfo(s.id, true); return; }
+    if (+el.dataset.i === G.step && s.part && G.phase === 'pick') { tryPick(s.part); return; }
+    if (INFO[s.id]) showInfo(s.id, false);
+  });
+}
+const meter = n => `<span class="meter">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+const TAGS = { req: 'ОБЯЗАТЕЛЬНО', dep: 'ЗАВИСИТ ОТ ЗАДАЧ', rec: 'РЕКОМЕНДУЕТСЯ' };
+function showInfo(id, closeBtn = false, actionsHtml = '') {
+  const d = INFO[id]; if (!d) return;
+  $('#info').innerHTML = `
+    <div class="tag ${d.tag}">${TAGS[d.tag]}</div>
+    <h2>${d.name}</h2><div class="sub">${d.sub}</div>
+    <div class="bars"><span>Влияние на игры</span>${meter(d.stats[0])}<span>Влияние на скорость системы</span>${meter(d.stats[1])}<span>Риск ошибки при установке</span>${meter(d.stats[2])}</div>
+    <div class="sec"><h4>Что это</h4><p>${d.what}</p></div>
+    <div class="sec"><h4>Куда и как ставить</h4><p>${d.where}</p></div>
+    <div class="sec"><h4>На что влияет</h4><p>${d.affects}</p></div>
+    <div class="sec no"><h4>Можно без этого?</h4><p>${d.without}</p></div>
+    <div class="sec tip"><h4>Лайфхак</h4><p>${d.tip}</p></div>
+    <div class="actions" id="infoActions">${actionsHtml}${closeBtn ? '<button class="btn ghost" id="infoClose">Закрыть</button>' : ''}</div>`;
+  $('#info').classList.add('show');
+  const c = $('#infoClose'); if (c) c.onclick = () => $('#info').classList.remove('show');
+  $('#info').scrollTop = 0;
+}
+function setInfoAction(html, handlers) {
+  const a = $('#infoActions'); if (!a) return; a.innerHTML = html;
+  const stepAt = G.step;
+  Object.entries(handlers).forEach(([id, fn]) => { const b = document.getElementById(id); if (b) b.onclick = () => { if (G.step !== stepAt) return; b.disabled = true; sfx.click(); fn(); }; });
+  $('#info').scrollTop = $('#info').scrollHeight;
+}
+
+/* Quiz modal */
+function quiz(key) {
+  const Q = QUIZ[key]; if (!Q) return Promise.resolve(true);
+  return new Promise(res => {
+    const L = 'ABCD';
+    $('#modalCard').innerHTML = `<div class="qlabel">◆ Проверь себя · +50 XP</div><h3>${Q.q}</h3>
+      <div class="opts">${Q.o.map((o, i) => `<button class="opt" data-i="${i}"><span class="k">${L[i]}</span>${o}</button>`).join('')}</div>
+      <div class="explain" id="qExp"></div><div class="foot"><button class="btn" id="qNext" style="display:none">Продолжить →</button></div>`;
+    $('#modal').classList.add('show');
+    let first = true;
+    $('#modalCard').querySelectorAll('.opt').forEach(b => b.onclick = () => {
+      const i = +b.dataset.i;
+      if (i === Q.a) {
+        b.classList.add('right'); $('#modalCard .opts').classList.add('locked'); sfx.ok();
+        $('#qExp').innerHTML = (first ? '<b style="color:var(--ok)">Верно!</b> ' : '<b style="color:var(--warn)">Теперь верно.</b> ') + Q.e; $('#qExp').classList.add('show');
+        if (first) addXP(50, 'знания'); $('#qNext').style.display = '';
+      } else { b.classList.add('wrong'); if (first) { G.mist++; $('#mist').textContent = G.mist; } first = false; sfx.err(); }
+    });
+    $('#qNext').onclick = () => { sfx.click(); $('#modal').classList.remove('show'); res(first); };
+  });
+}
+
+/* =========================================================
+   GHOSTS / RINGS
+   ========================================================= */
+const ghostMat = new THREE.MeshBasicMaterial({ color: 0x38f5ff, transparent: true, opacity: .25, depthWrite: false, toneMapped: false });
+const ghostWire = new THREE.MeshBasicMaterial({ color: 0x9be9ff, wireframe: true, transparent: true, opacity: .25, toneMapped: false });
+let ghost = null;
+function makeGhost(src, parent, pos, quat) {
+  removeGhost();
+  ghost = src.clone(true);
+  ghost.traverse(o => { if (o.isMesh || o.isInstancedMesh) { o.material = ghostMat; o.castShadow = false; o.receiveShadow = false; } });
+  ghost.position.set(...pos); ghost.quaternion.copy(quat); ghost.userData.pickKey = 'ghost';
+  parent.add(ghost);
+}
+function removeGhost() { if (ghost) { ghost.parent.remove(ghost); ghost = null; } }
+const ringMat = new THREE.MeshBasicMaterial({ color: 0x38f5ff, transparent: true, opacity: .8, toneMapped: false, depthWrite: false });
+const pickRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.62, 64), ringMat); pickRing.rotation.x = -PI / 2; pickRing.visible = false; scene.add(pickRing);
+const pickRing2 = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.72, 64), ringMat); pickRing2.rotation.x = -PI / 2; pickRing.add(pickRing2); pickRing2.rotation.x = 0;
+function ringAt(obj, r = 1) {
+  const bb = new THREE.Box3().setFromObject(obj); const c = bb.getCenter(new V3()); const s = bb.getSize(new V3());
+  pickRing.position.set(c.x, 0.04, c.z); const sc = Math.max(s.x, s.z) * 0.85 * r; pickRing.scale.setScalar(Math.max(0.6, sc)); pickRing.visible = true;
+}
+
+/* =========================================================
+   CABLES
+   ========================================================= */
+const cableMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: braidTex, roughness: .6, metalness: .2 });
+const cableMatCy = new THREE.MeshStandardMaterial({ color: 0x9fdcff, map: braidTex, roughness: .5, metalness: .2, emissive: 0x0a3040, emissiveIntensity: 1 });
+function growCable(points, radius, parent, mat = cableMat, dur = 1.1) {
+  const curve = new THREE.CatmullRomCurve3(points.map(p => new V3(...p)), false, 'catmullrom', 0.2);
+  const geo = new THREE.TubeGeometry(curve, 160, radius, 10, false);
+  const m = mesh(geo, mat, parent); const total = geo.index.count;
+  geo.setDrawRange(0, 0);
+  const end = mesh(new THREE.BoxGeometry(radius * 3.2, radius * 2.4, radius * 3.2), M.black, parent); end.position.copy(curve.getPoint(1)); end.visible = false;
+  return tween(dur, k => { geo.setDrawRange(0, Math.floor(total * k / 60) * 60); if (k >= 1) { geo.setDrawRange(0, total); end.visible = true; } }, k => k);
+}
+const B2C = (x, y, z) => [x - 0.88, y + 2.775, z - 0.98];
+const CABLES = [
+  { id: 'atx', name: '24-pin ATX', color: '#38f5ff', socket: 'ATX_24', desc: 'Основное питание материнской платы. Самый широкий разъём.', r: 0.075, mat: cableMatCy,
+    path: [[-0.62, 0.55, 0.0], [0.2, 0.62, 0.0], [0.75, 0.75, -0.75], [0.74, 1.3, -1.0], [0.72, 2.6, -1.0], [0.6, 3.17, -0.86], B2C(1.2, 0.4, 0.1)] },
+  { id: 'eps', name: '8-pin EPS (CPU)', color: '#ffc24d', socket: 'EPS_8', desc: 'Питание процессора. Подключается сверху слева, у самого края платы.', r: 0.045,
+    path: [[-0.62, 0.72, -0.6], [-0.3, 1.05, -0.95], [-1.1, 1.15, -1.05], [-2.05, 1.4, -1.05], [-2.08, 4.0, -1.05], [-1.95, 4.45, -0.93], [-1.6, 4.46, -0.86], B2C(-0.72, 1.48, 0.1)] },
+  { id: 'pcie', name: 'PCIe 8-pin ×2 (GPU)', color: '#ff4fd8', socket: 'GPU_PWR', desc: 'Питание видеокарты. Подключается к верхнему торцу карты, который смотрит в стекло.', r: 0.05,
+    path: [[-0.62, 0.75, 0.3], [0.0, 1.05, 0.7], [0.45, 1.6, 0.62], [0.32, 2.05, 0.45], B2C(1.15, -0.68, 1.33)] },
+  { id: 'cpufan', name: 'CPU_FAN 4-pin', color: '#5dff9c', socket: 'CPU_FAN', desc: 'Вентилятор кулера. Подключается в разъём с подписью CPU_FAN.', r: 0.018,
+    path: [B2C(0.53, 1.32, 0.9), B2C(0.55, 1.45, 0.5), B2C(0.6, 1.47, 0.2), B2C(0.62, 1.42, 0.08)] },
+  { id: 'fpanel', name: 'Front Panel (корпус)', color: '#9b6bff', socket: 'F_PANEL', desc: 'Кнопки питания и перезагрузки, индикаторы корпуса.', r: 0.03,
+    path: [[1.9, 0.5, -0.9], [1.3, 1.1, -0.98], [0.5, 1.22, -0.96], B2C(0.92, -1.42, 0.06)] },
+];
+const SOCKETS = [
+  { id: 'ATX_24', label: 'ATX 24-pin', pos: B2C(1.14, 0.4, 0.15) },
+  { id: 'EPS_8', label: 'EPS 8-pin', pos: B2C(-0.72, 1.43, 0.15) },
+  { id: 'GPU_PWR', label: 'GPU питание', pos: B2C(1.15, -0.65, 1.33) },
+  { id: 'CPU_FAN', label: 'CPU_FAN', pos: B2C(0.62, 1.42, 0.08) },
+  { id: 'F_PANEL', label: 'F_PANEL', pos: B2C(0.92, -1.42, 0.06) },
+  { id: 'SATA', label: 'SATA', pos: B2C(1.15, -0.25, 0.08), decoy: 'SATA-порты нужны для 2,5" SSD и HDD, но у нас всё на M.2. Это не тот разъём.' },
+  { id: 'SYS_FAN', label: 'SYS_FAN1', pos: B2C(-0.2, -1.45, 0.06), decoy: 'SYS_FAN подходит для корпусных вентиляторов. Вентилятор процессора подключай именно в CPU_FAN, иначе плата может не запуститься с ошибкой «CPU Fan Error».' },
+];
+
+/* =========================================================
+   STEP ENGINE
+   ========================================================= */
+function nextStep() {
+  G.step++; G.firstTry = true; clearMarkers(); removeGhost(); pickRing.visible = false;
+  const ia = $('#infoActions'); if (ia) ia.innerHTML = ''; $('#info').classList.remove('show');
+  renderInv(); renderChapters();
+  if (G.step >= STEPS.length) return finish();
+  const s = STEPS[G.step];
+  ({ install: startInstall, ram: startRAM, paste: startPaste, cables: startCables, close: startClose, monitor: startMonitor, power: startPower, bios: startBIOS, windows: startWindows })[s.type](s);
+}
+function cur() { return STEPS[G.step]; }
+function completeStep(s) { installed.add(s.id); renderInv(); renderChapters(); }
+
+function targetQuat(s) { return s.euler ? new THREE.Quaternion().setFromEuler(new THREE.Euler(...s.euler)) : new THREE.Quaternion(); }
+async function startInstall(s) {
+  G.phase = 'pick'; G.busy = true;
+  setObjective(s.pick);
+  await flyCam(CAM[s.cam]);
+  const part = parts[s.part]; ringAt(part);
+  marker('pick', () => { const bb = new THREE.Box3().setFromObject(part); return new V3((bb.min.x + bb.max.x) / 2, bb.max.y + 0.1, (bb.min.z + bb.max.z) / 2); }, '▼ ' + INFO[s.id].name, () => tryPick(s.part));
+  $('#info').classList.remove('show');
+  G.busy = false;
+}
+async function tryPick(key) {
+  const s = cur(); if (G.busy || G.free) return;
+  if (G.phase === 'pick' && (s.part === key || (s.type === 'ram' && (key === 'ram1' || key === 'ram2')))) {
+    if (s.type === 'ram') return pickRAM(key);
+    return doPick(s);
+  }
+  if (G.phase === 'place' && G.held && G.held === parts[key]) { return doPlace(s); }
+  if (installed.has(PART_STEP[key])) return;
+  if (G.phase === 'pick' || G.phase === 'place' || G.phase === 'action') {
+    const id = PART_STEP[key]; const d = INFO[id]; if (!d) return;
+    mistake(`<b>Рано для «${d.name}».</b> ${d.early}`);
+    shake(parts[key]);
+  }
+}
+function shake(o) { if (o === board && board.parent !== scene) return; const r0 = o.rotation.y; tween(.45, (k, raw) => { o.rotation.y = r0 + Math.sin(raw * PI * 6) * 0.06 * (1 - raw); }, k => k); }
+async function doPick(s) {
+  G.busy = true; clearMarkers(); pickRing.visible = false; sfx.pick();
+  const part = parts[s.part]; const parent = s.parent(); const q = targetQuat(s);
+  const t = worldOf(parent, s.pos, q);
+  const axis = s.axis === 'y' ? new V3(0, 1, 0) : new V3(0, 0, 1);
+  const n = axis.applyQuaternion(parent.getWorldQuaternion(new THREE.Quaternion()));
+  const hover = t.p.clone().addScaledVector(n, s.hover);
+  showInfo(s.id);
+  setObjective(s.put);
+  if (s.camPut) flyCam(CAM[s.camPut], 1.4);
+  await moveTo(part, hover, t.q, 1.0, 0.8);
+  G.held = part; G.holdBase = hover.clone(); G.holdN = n;
+  makeGhost(part, parent, s.pos, q);
+  marker('place', () => ghost ? ghost.localToWorld(new V3(0, 0, 0)) : new V3(), '◆ Установить сюда', () => doPlace(s), 'vi');
+  G.phase = 'place'; G.busy = false;
+}
+async function doPlace(s) {
+  if (G.busy) return; G.busy = true; clearMarkers(); removeGhost();
+  const part = G.held; G.held = null; const parent = s.parent(); const q = targetQuat(s);
+  const t = worldOf(parent, s.pos, q);
+  await moveTo(part, t.p, t.q, 0.75, 0);
+  parent.attach(part); part.position.set(...s.pos); part.quaternion.copy(q);
+  sfx.place();
+  if (s.id === 'gpu') { slotCovers.slice(0, 3).forEach(c => c.visible = false); gpuRear.visible = true; }
+  await afterInstall(s);
+}
+async function afterInstall(s) {
+  completeStep(s);
+  addXP(G.firstTry ? 100 : 60, G.firstTry ? 'с первого раза' : 'установлено');
+  toast(`<b>✓ ${INFO[s.id].name}</b> на месте`, 'ok', 2200);
+  showInfo(s.id);
+  G.phase = 'done'; G.busy = false;
+  setObjective(QUIZ[s.id] ? 'Прочитай карточку справа и <b>ответь на вопрос</b>' : 'Прочитай карточку справа и жми <b>«Дальше»</b>', 'Готово');
+  setInfoAction(QUIZ[s.id] ? '<button class="btn vi" id="goQuiz">◆ Вопрос на +50 XP</button>' : '<button class="btn" id="goNext">Дальше →</button>', {
+    goQuiz: async () => { await quiz(s.id); nextStep(); }, goNext: () => nextStep(),
+  });
+}
+
+/* ---------- RAM ---------- */
+const ramSlots = { A1: 0.66, A2: 0.76, B1: 0.86, B2: 0.96 };
+let ramDone = [];
+async function startRAM(s) {
+  G.phase = 'pick'; G.busy = true; ramDone = [];
+  setObjective(s.pick); await flyCam(CAM.desk, 1.2);
+  ringAt(parts.ram1, 1.4);
+  marker('pick', objW(parts.ram1, [0, 0, 0.5]), '▼ Оперативная память', () => tryPick('ram1'));
+  G.busy = false;
+}
+async function pickRAM(key) {
+  const s = cur(); G.busy = true; clearMarkers(); pickRing.visible = false; sfx.pick();
+  const stick = ramDone.length === 0 ? (key === 'ram2' ? parts.ram2 : parts.ram1) : (G.otherStick);
+  G.otherStick = stick === parts.ram1 ? parts.ram2 : parts.ram1;
+  showInfo('ram'); setObjective(s.put + (ramDone.length ? ' — <b>вторая планка</b>' : ''));
+  flyCam(CAM.ram, 1.2);
+  const t = worldOf(board, [0.86, 0.72, 0.045], new THREE.Quaternion());
+  await moveTo(stick, t.p.clone().add(new V3(0, 0.9, 0)), t.q, 1.0, 0.6);
+  G.held = stick; G.holdBase = stick.position.clone(); G.holdN = new V3(0, 1, 0);
+  G.phase = 'place';
+  Object.entries(ramSlots).forEach(([name, x]) => {
+    if (ramDone.includes(name)) return;
+    marker('slot' + name, boardW(x, 1.45, 0.1), name, () => chooseSlot(name), 'small');
+  });
+  G.busy = false;
+}
+async function chooseSlot(name) {
+  if (G.busy) return;
+  const s = cur();
+  if (name === 'A1' || name === 'B1') {
+    mistake(`<b>Слот ${name} — не лучший выбор.</b> При двух планках производители советуют A2 и B2 (второй и четвёртый от процессора). Слоты A1 и B1 заполняют, когда планок четыре, а с двумя хуже стабильность и разгон.`);
+    return;
+  }
+  if (ramDone.length === 1 && ((ramDone[0] === 'A2' && name !== 'B2') || (ramDone[0] === 'B2' && name !== 'A2'))) return;
+  G.busy = true; clearMarkers();
+  const stick = G.held; G.held = null; const x = ramSlots[name];
+  const t = worldOf(board, [x, 0.72, 0.045], new THREE.Quaternion());
+  await moveTo(stick, t.p, t.q, 0.6);
+  board.attach(stick); stick.position.set(x, 0.72, 0.045); stick.quaternion.identity();
+  sfx.place(); toast(`<b>Щёлк!</b> Планка в ${name}`, 'ok', 1600);
+  ramDone.push(name);
+  if (ramDone.length === 1) {
+    G.busy = false; G.phase = 'pick';
+    setObjective('Отлично! Теперь возьми <b>вторую планку</b>');
+    await flyCam(CAM.desk, 1.0);
+    ringAt(G.otherStick, 1.4);
+    marker('pick', objW(G.otherStick, [0, 0, 0.5]), '▼ Вторая планка', () => tryPick(G.otherStick.userData.pickKey));
+  } else {
+    toast('<b>Двухканальный режим активирован!</b> A2 + B2', 'ok', 2600);
+    await afterInstall(s);
+  }
+}
+
+/* ---------- PASTE ---------- */
+let pasteBlob;
+async function startPaste(s) {
+  G.phase = 'action'; G.busy = true; setObjective(s.pick);
+  showInfo('paste'); await flyCam({ p: [-0.85, 2.4, 2.0], t: [-0.85, 0.3, 0.65] }, 1.3);
+  marker('paste', boardW(0.15, 0.75, 0.1), '💧 Капнуть пасту сюда', async () => {
+    G.busy = true; clearMarkers();
+    pasteBlob = mesh(new THREE.SphereGeometry(0.06, 20, 14), std(0x9aa0aa, .35, .3), board, 0.15, 0.75, 0.072);
+    pasteBlob.scale.set(0.01, 0.01, 0.01);
+    await tween(.8, k => pasteBlob.scale.set(k, k, k * .45));
+    sfx.place(); await afterInstall(s);
+  });
+  G.busy = false;
+}
+
+/* ---------- CABLES ---------- */
+let cableSel = null; const cablesDone = new Set();
+async function startCables(s) {
+  G.phase = 'cables'; G.busy = true; cablesDone.clear(); cableSel = null;
+  setObjective('Выбери кабель в панели справа, потом кликни <b>нужный разъём</b> в корпусе');
+  await flyCam({ p: [2.1, 3.6, 7.8], t: [1.9, 2.4, -1.0] });
+  renderCablePanel();
+  SOCKETS.forEach(so => marker('so' + so.id, caseW(...so.pos), so.label, () => connectTo(so), 'small'));
+  G.busy = false;
+}
+function renderCablePanel() {
+  $('#info').innerHTML = `<div class="tag req">${TAGS.req}</div><h2>Подключи провода</h2><div class="sub">5 кабелей · 7 разъёмов · не перепутай</div>
+    <div class="sec"><h4>Как играть</h4><p>Выбери кабель → кликни подходящий разъём на плате. Модульный блок питания позволяет подключить только нужные кабели.</p></div>
+    <div class="opts" style="margin-top:14px">${CABLES.map(c => `<button class="opt ${cablesDone.has(c.id) ? 'right' : ''}" data-c="${c.id}" style="${cableSel === c.id ? 'border-color:var(--cy);background:rgba(56,245,255,.1)' : ''}"><span class="k" style="background:${c.color};color:#05070c">${cablesDone.has(c.id) ? '✓' : '⚡'}</span><span><b>${c.name}</b><br><small style="color:var(--mut)">${c.desc}</small></span></button>`).join('')}</div>
+    <div class="sec tip"><h4>Лайфхак</h4><p>${INFO.cables.tip}</p></div>`;
+  $('#info').classList.add('show');
+  $('#info').querySelectorAll('[data-c]').forEach(b => b.onclick = () => { if (cablesDone.has(b.dataset.c)) return; cableSel = b.dataset.c; sfx.click(); renderCablePanel(); setObjective(`Кабель <b>${CABLES.find(c => c.id === cableSel).name}</b> → кликни его разъём`); });
+}
+async function connectTo(so) {
+  if (!cableSel) { toast('Сначала <b>выбери кабель</b> в панели справа →', '', 2200); return; }
+  const c = CABLES.find(x => x.id === cableSel);
+  if (so.decoy) { mistake(`<b>${so.label}:</b> ${so.decoy}`); return; }
+  if (c.socket !== so.id) {
+    const hints = { EPS_8: 'EPS 8-pin — это питание <b>процессора</b>.', GPU_PWR: 'Разъём видеокарты принимает только <b>PCIe</b>-кабель.', ATX_24: 'Сюда идёт только широкий <b>24-pin</b>.', CPU_FAN: 'Это 4-pin разъём вентилятора CPU.', F_PANEL: 'Это гребёнка для проводов <b>корпуса</b>.' };
+    mistake(`<b>Не подходит!</b> ${hints[so.id] || ''} ${c.id === 'eps' && so.id === 'GPU_PWR' ? 'EPS и PCIe похожи, но ключи разные: с силой можно сломать разъём.' : ''}`);
+    return;
+  }
+  G.busy = true;
+  if (c.id === 'fpanel') { await frontPanelGame(); }
+  removeMarker('so' + so.id);
+  const doneEl = marker('so' + so.id, caseW(...so.pos), '✓ ' + so.label, null, 'small done');
+  await growCable(c.path, c.r, pcCase, c.mat || cableMat, 1.1);
+  sfx.place(); cablesDone.add(c.id); cableSel = null;
+  addXP(40, c.name); renderCablePanel();
+  G.busy = false;
+  if (cablesDone.size === CABLES.length) {
+    SOCKETS.filter(s => s.decoy).forEach(s => removeMarker('so' + s.id));
+    G.busy = true; await sleep(500); clearMarkers();
+    const s = cur(); completeStep(s); showInfo('cables');
+    setObjective('Все провода подключены! Ответь на вопрос', 'Готово');
+    setInfoAction('<button class="btn vi" id="goQuiz">◆ Вопрос на +50 XP</button>', { goQuiz: async () => { await quiz('cables'); nextStep(); } });
+    G.busy = false;
+  } else setObjective('Выбери следующий кабель в панели справа');
+}
+
+/* Front panel mini-game */
+function frontPanelGame() {
+  return new Promise(res => {
+    const CONN = [
+      { id: 'pled', name: 'POWER LED +/−', color: '#5dff9c', pins: [0, 1], tip: 'Светодиод питания имеет полярность: «+» обычно цветной провод, «−» белый или чёрный.' },
+      { id: 'pwr', name: 'POWER SW', color: '#ff4d6d', pins: [2, 3], tip: 'Кнопке включения полярность не важна: это просто замыкание двух контактов.' },
+      { id: 'hdd', name: 'HDD LED +/−', color: '#ffc24d', pins: [5, 6], tip: 'Индикатор активности диска мигает, когда идёт чтение или запись.' },
+      { id: 'rst', name: 'RESET SW', color: '#38f5ff', pins: [7, 8], tip: 'Кнопка перезагрузки. На многих новых корпусах её уже нет.' },
+    ];
+    // index layout: top row 0..4 (pins 2,4,6,8,10), bottom row 5..9 (pins 1,3,5,7,9)
+    const PINLBL = ['PLED+', 'PLED−', 'PWR', 'PWR', '', 'HDD+', 'HDD−', 'RST', 'RST', 'NC'];
+    const filled = {}; let sel = null, done = 0;
+    $('#modalCard').innerHTML = `<div class="qlabel">◆ Мини-игра · F_PANEL</div><h3>Подключи провода корпуса к гребёнке</h3>
+      <p style="color:#aab3cf;font-size:13.5px;line-height:1.55;margin-top:-8px">Эти крошечные разъёмы — главная головная боль сборщиков. Схема всегда есть в мануале к плате и на самом текстолите. Выбери коннектор и кликни по месту, куда он встанет.</p>
+      <div class="fp"><div class="fpc" id="fpc">${CONN.map(c => `<button data-c="${c.id}"><i style="background:${c.color}"></i>${c.name}</button>`).join('')}</div>
+      <div class="hdr2"><div class="silk wide"><span class="w2">+PLED−</span><span class="w2">PWR_SW</span><span></span></div>
+      <div class="pins" id="pins">${PINLBL.map((l, i) => `<div class="pin ${i === 4 ? 'key' : ''}" data-p="${i}"><span>${i < 5 ? 2 * i + 2 : 2 * (i - 5) + 1}</span></div>`).join('')}</div>
+      <div class="silk wide"><span class="w2">+HDD_LED−</span><span class="w2">RESET</span><span>NC</span></div></div></div>
+      <div class="explain" id="fpExp"></div><div class="foot"><button class="btn" id="fpDone" style="display:none">Готово →</button></div>`;
+    $('#modal').classList.add('show');
+    $('#fpc').querySelectorAll('button').forEach(b => b.onclick = () => { $('#fpc').querySelectorAll('button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); sel = CONN.find(c => c.id === b.dataset.c); sfx.click(); });
+    $('#pins').querySelectorAll('.pin').forEach(p => p.onclick = () => {
+      if (!sel) { toast('Сначала выбери коннектор слева', '', 1800); return; }
+      const i = +p.dataset.p;
+      if (sel.pins.includes(i)) {
+        sel.pins.forEach(pi => { const el = $(`#pins [data-p="${pi}"]`); el.classList.add('f'); el.style.background = sel.color + '33'; el.style.borderColor = sel.color; });
+        $(`#fpc [data-c="${sel.id}"]`).classList.add('used'); sfx.place();
+        $('#fpExp').innerHTML = `<b>${sel.name}:</b> ${sel.tip}`; $('#fpExp').classList.add('show');
+        sel = null; done++;
+        if (done === 4) { sfx.ok(); addXP(80, 'F_PANEL'); $('#fpExp').innerHTML = '<b style="color:var(--ok)">Идеально!</b> Если перепутать PWR и RST, ПК «включится» кнопкой перезагрузки. А если неправильно воткнуть LED, просто не загорится индикатор. Ничего не сгорит, но разбираться придётся долго.'; $('#fpDone').style.display = ''; }
+      } else { G.mist++; $('#mist').textContent = G.mist; sfx.err(); p.style.animation = 'shake .4s'; setTimeout(() => p.style.animation = '', 400); $('#fpExp').innerHTML = `<b style="color:var(--err)">Мимо.</b> Посмотри на подписи на текстолите: каждый коннектор подписан так же, как контакты.`; $('#fpExp').classList.add('show'); }
+    });
+    $('#fpDone').onclick = () => { $('#modal').classList.remove('show'); res(); };
+  });
+}
+
+/* ---------- CLOSE PANEL ---------- */
+async function startClose(s) {
+  G.phase = 'action'; G.busy = true; setObjective(s.pick); $('#info').classList.remove('show');
+  await flyCam(CAM.case);
+  glass.visible = true; glass.position.z = 4.5; glassMat.opacity = 0;
+  await tween(.8, k => { glassMat.opacity = .13 * k; glass.position.z = 4.5 - k * 1.5; });
+  marker('glass', caseW(0, 2.6, 3.0), '◆ Задвинуть стекло', async () => {
+    G.busy = true; clearMarkers();
+    await tween(1.0, k => { glass.position.z = 3.0 - k * (3.0 - 1.13); });
+    sfx.place(); completeStep(s); addXP(50, 'корпус закрыт');
+    toast('<b>Корпус собран!</b> Осталось подключить периферию и включить', 'ok', 2600);
+    await sleep(900); nextStep();
+  }, 'vi');
+  G.busy = false;
+}
+
+/* ---------- MONITOR ---------- */
+async function startMonitor(s) {
+  G.phase = 'action'; G.busy = true; setObjective(s.pick);
+  await flyCam(CAM.rear);
+  const opts = [
+    { label: 'HDMI материнки', pos: caseW(-2.25, 3.3, -0.8), right: false },
+    { label: 'DisplayPort видеокарты', pos: caseW(-2.25, 2.0, -0.3), right: true },
+  ];
+  opts.forEach((o, i) => marker('mon' + i, o.pos, o.label, async () => {
+    if (!o.right) { mistake('<b>Стоп!</b> Если в ПК есть видеокарта, монитор подключают <b>только к ней</b>. Через материнку картинка пойдёт со встроенной графики (или её не будет вовсе), а игры будут работать без видеокарты.'); return; }
+    G.busy = true; clearMarkers();
+    const wp = p => { const v = pcCase.localToWorld(new V3(...p)); return [v.x, v.y, v.z]; };
+    const start = wp([-2.3, 2.0, -0.3]);
+    await growCable([start, [start[0] - 0.5, 1.6, start[2] - 0.2], [-0.6, 0.06, -2.3], [-3.0, 0.06, -3.0], [-4.1, 0.8, -2.95], [-4.2, 2.0, -2.8]], 0.04, scene, cableMat, 1.4);
+    sfx.place(); completeStep(s); addXP(G.firstTry ? 100 : 50, 'монитор');
+    await quiz('monitor'); nextStep();
+  }, i ? 'vi' : ''));
+  setObjective('Кабель монитора: куда его воткнуть? <b>Выбери порт</b> сзади корпуса');
+  G.busy = false;
+}
+
+/* ---------- POWER ---------- */
+async function startPower(s) {
+  G.phase = 'action'; G.busy = true; setObjective(s.pick); $('#info').classList.remove('show');
+  await flyCam(CAM.top);
+  marker('pwr', caseW(1.85, 4.7, 0.6), '⏻ ВКЛЮЧИТЬ', async () => {
+    G.busy = true; clearMarkers();
+    await tween(.15, k => pwrBtn.position.y = 4.64 - k * 0.03); await tween(.15, k => pwrBtn.position.y = 4.61 + k * 0.03);
+    sfx.power(); G.powered = true; completeStep(s);
+    pwrRing.material.emissiveIntensity = 4;
+    tween(1.5, k => { caseLight.intensity = k * 5; });
+    await flyCam({ p: [3.4, 3.6, 8.2], t: [2.6, 2.3, -0.8] }, 1.6);
+    sfx.beep(); drawScreen('post'); toast('<b>POST пройден!</b> Один короткий писк означает, что железо в порядке', 'ok', 3000);
+    addXP(100, 'первый запуск');
+    await sleep(1600);
+    await flyCam(CAM.monitor, 1.3);
+    nextStep();
+  }, 'vi');
+  G.busy = false;
+}
+
+/* ---------- BIOS ---------- */
+function coach(html) { $('#coachText').innerHTML = html; }
+function startBIOS(s) {
+  G.phase = 'bios'; G.busy = true;
+  setObjective('Успей нажать <b>DEL</b>, чтобы войти в BIOS!');
+  const qte = $('#qte'); qte.classList.add('show'); let got = false; const t0 = performance.now(); const DUR = 4000;
+  const enter = () => { if (got) return; got = true; cleanup(); addXP(50, 'реакция'); openBIOS(s); };
+  const key = e => { if (e.key === 'Delete' || e.key === 'F2' || e.key === 'Backspace') enter(); };
+  addEventListener('keydown', key); $('#qteKey').onclick = enter;
+  const iv = setInterval(() => { const k = 1 - (performance.now() - t0) / DUR; $('#qteBar').style.width = Math.max(0, k * 100) + '%'; if (k <= 0 && !got) { got = true; cleanup(); toast('Не успел, ничего страшного: на пустом диске плата сама откроет BIOS («No bootable device»)', '', 3500); setTimeout(() => openBIOS(s), 600); } }, 30);
+  function cleanup() { clearInterval(iv); removeEventListener('keydown', key); qte.classList.remove('show'); }
+}
+function openBIOS(s) {
+  drawScreen('bios');
+  const st = { tab: 'main', check: false, xmp: false, boot: ['NVMe: NV5 1TB (пусто)', 'UEFI: USB Flash 16GB'], saved: false };
+  $('#screen').classList.add('show');
+  coach('Это <b>BIOS (UEFI)</b>: прошивка материнской платы, которая запускается до Windows. Здесь проверяют, что всё железо определилось, и настраивают загрузку. Выполни задания справа.');
+  const render = () => {
+    const tasks = [
+      ['check', 'Убедись, что CPU, RAM и SSD определились', st.check],
+      ['xmp', 'Включи XMP/EXPO, чтобы память работала на полной частоте', st.xmp],
+      ['boot', 'Поставь USB-флешку первой в загрузке', st.boot[0].startsWith('UEFI')],
+    ];
+    const all = tasks.every(t => t[2]);
+    let main = '';
+    if (st.tab === 'main') main = `
+      <div class="row"><span>CPU</span><span class="v">NEXUS Core N9 9800 · 8C/16T</span></div>
+      <div class="row"><span>CPU Temperature</span><span class="v">38 °C</span></div>
+      <div class="row"><span>CPU Fan (CPU_FAN)</span><span class="v">920 RPM</span></div>
+      <div class="row"><span>Memory</span><span class="v ${st.xmp ? 'hl' : ''}">32768 MB DDR5 · ${st.xmp ? '6000' : '4800'} MHz · Dual Channel</span></div>
+      <div class="row"><span>M.2_1</span><span class="v">NV5 1TB (PCIe 5.0 x4)</span></div>
+      <div class="row"><span>USB</span><span class="v">USB Flash 16GB</span></div>
+      <div class="row"><span>PCIe x16_1</span><span class="v">FORGE X90 16GB · x16 Gen5</span></div>
+      <div style="margin-top:14px"><button class="bbtn" id="bCheck" ${st.check ? 'disabled' : ''}>${st.check ? '✓ Всё на месте' : 'Подтвердить: всё определилось'}</button></div>`;
+    if (st.tab === 'tweak') main = `
+      <div class="row click" id="bXmp"><span>XMP / EXPO Profile</span><span class="v hl">${st.xmp ? 'Profile 1 · DDR5-6000 CL30' : 'Disabled'} ⏎</span></div>
+      <div class="row"><span>DRAM Frequency</span><span class="v">${st.xmp ? 'DDR5-6000' : 'DDR5-4800 (Auto)'}</span></div>
+      <div class="row"><span>DRAM Voltage</span><span class="v">${st.xmp ? '1.35 V' : '1.10 V'}</span></div>
+      <div class="row"><span>CPU Core Ratio</span><span class="v">Auto</span></div>
+      <div style="margin-top:10px;font-size:11.5px;color:#b59873;line-height:1.6">Без XMP память работает на «безопасной» базовой частоте. Профиль XMP/EXPO записан производителем прямо в планку, и его включение гарантированно поддерживается.</div>`;
+    if (st.tab === 'boot') main = `
+      <div class="row"><span>Fast Boot</span><span class="v">Enabled</span></div>
+      <div class="row"><span>Secure Boot</span><span class="v">Enabled (нужно для Windows 11)</span></div>
+      <div class="row"><span>TPM 2.0 (fTPM / PTT)</span><span class="v">Enabled (нужно для Windows 11)</span></div>
+      <div style="margin:14px 0 6px;color:#ff9d2e">Boot Option Priorities</div>
+      ${st.boot.map((b, i) => `<div class="row click" data-b="${i}"><span>Boot Option #${i + 1}</span><span class="v ${b.startsWith('UEFI') ? 'hl' : ''}">${b} ${i ? '▲ поднять' : ''}</span></div>`).join('')}`;
+    $('#scr').innerHTML = `<div class="bios">
+      <div class="hdr"><b>NEXUS UEFI BIOS</b><span>${new Date().toLocaleDateString('ru-RU')} · EZ Mode → Advanced</span></div>
+      <div class="tabs"><button data-t="main" class="${st.tab === 'main' ? 'on' : ''}">Main</button><button data-t="tweak" class="${st.tab === 'tweak' ? 'on' : ''}">Ai Tweaker</button><button data-t="boot" class="${st.tab === 'boot' ? 'on' : ''}">Boot</button></div>
+      <div class="body"><div class="main">${main}</div>
+      <div class="side"><div style="color:#ff9d2e;margin-bottom:8px">ЗАДАНИЯ</div>${tasks.map(t => `<div class="task ${t[2] ? 'done' : ''}"><i>${t[2] ? '■' : '□'}</i>${t[1]}</div>`).join('')}
+      <div style="margin-top:14px">CPU<div class="gauge"><i style="width:38%"></i></div></div><div style="margin-top:8px">DRAM<div class="gauge"><i style="width:${st.xmp ? 100 : 80}%"></i></div></div>
+      <div style="margin-top:20px"><button class="bbtn" id="bSave" ${all ? '' : 'disabled'} style="width:100%">F10 · Save & Exit</button></div></div></div>
+      <div class="foot"><span>←→ вкладки · ⏎ выбрать</span><span>F10 Save & Exit · ESC Exit</span></div></div>`;
+    $('#scr').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { st.tab = b.dataset.t; sfx.click(); render(); });
+    const c = $('#bCheck'); if (c) c.onclick = () => { st.check = true; sfx.ok(); addXP(20); coach('Все компоненты на месте! Если бы плата не видела память или SSD, мы бы проверили, до конца ли они вставлены. <b>Теперь вкладка Ai Tweaker.</b>'); render(); };
+    const x = $('#bXmp'); if (x) x.onclick = () => { if (st.xmp) return; st.xmp = true; sfx.ok(); addXP(30, 'XMP'); coach('Память разогнана с 4800 до <b>6000 MHz</b>. Это бесплатные +10–15% FPS для Ryzen. <b>Теперь вкладка Boot.</b>'); render(); };
+    $('#scr').querySelectorAll('[data-b]').forEach(b => b.onclick = () => { const i = +b.dataset.b; if (i === 0) return; [st.boot[0], st.boot[1]] = [st.boot[1], st.boot[0]]; sfx.ok(); addXP(30, 'boot'); coach('Флешка теперь первая в очереди загрузки. Можно было бы и не трогать порядок, а просто вызвать <b>Boot Menu</b> клавишей F8/F11/F12 при старте. <b>Жми F10, чтобы сохранить.</b>'); render(); });
+    const sv = $('#bSave'); if (sv) sv.onclick = async () => {
+      sfx.click(); completeStep(s); coach('Настройки сохранены, перезагрузка… Сейчас стартует <b>установщик Windows</b> с флешки.');
+      $('#scr').innerHTML = '<div class="dos">Saving configuration…<br>Rebooting…<br><br>Booting from UEFI: USB Flash 16GB</div>';
+      await sleep(1600); nextStep();
+    };
+  };
+  const onF10 = e => { if (e.key === 'F10') { e.preventDefault(); const sv = $('#bSave'); if (sv && !sv.disabled) { removeEventListener('keydown', onF10); sv.click(); } } };
+  addEventListener('keydown', onF10);
+  render();
+}
+
+/* ---------- WINDOWS ---------- */
+function startWindows(s) {
+  G.phase = 'windows'; setObjective('Пройди <b>установку Windows 11</b>');
+  let i = 0; const scr = $('#scr');
+  const W = (body, foot, cls = 'setup') => { scr.innerHTML = `<div class="win ${cls}"><div class="wdlg">${body}<div class="wfoot">${foot}</div></div></div>`; };
+  const next = () => { sfx.click(); i++; screens[i](); };
+  const bad = (t) => { G.mist++; $('#mist').textContent = G.mist; sfx.err(); coach('<b style="color:var(--err)">Ой!</b> ' + t); };
+  drawScreen('setup', { p: 0.1 });
+  const screens = [
+    () => { coach('Установщик загрузился с флешки. Сначала выбираем язык и раскладку. Английскую раскладку Windows добавит сама.');
+      W(`<h2>Установка Windows 11</h2><div class="d">Выберите язык и другие параметры.</div>
+        <label>Устанавливаемый язык</label><select><option>Русский</option><option>English (United States)</option></select>
+        <label>Формат времени и денежных единиц</label><select><option>Русский (Россия)</option></select>
+        <label>Метод ввода (раскладка клавиатуры)</label><select><option>Русская</option><option>США</option></select>`,
+        `<span style="font-size:11px;color:#666">© Microsoft Corporation</span><button class="wbtn" id="n">Далее</button>`); $('#n').onclick = next; },
+    () => { coach('Нам нужна <b>чистая установка</b>. «Восстановление» нужно, когда Windows уже стоит и сломалась.');
+      let sel = -1;
+      W(`<h2>Выберите параметр установки</h2><div class="d">Что вы хотите сделать?</div>
+        <div class="wopt" data-o="0"><span>○</span><div><b>Установить Windows 11</b>Установка на этот компьютер. Файлы, приложения и параметры на выбранном диске будут удалены.</div></div>
+        <div class="wopt" data-o="1"><span>○</span><div><b>Восстановить компьютер</b>Устранение неполадок в уже установленной системе.</div></div>`,
+        `<span></span><button class="wbtn" id="n" disabled>Далее</button>`);
+      scr.querySelectorAll('.wopt').forEach(o => o.onclick = () => { sel = +o.dataset.o; scr.querySelectorAll('.wopt').forEach(x => x.classList.toggle('sel', x === o)); $('#n').disabled = false; });
+      $('#n').onclick = () => { if (sel === 1) return bad('На SSD ещё нет Windows, так что восстанавливать нечего. Выбери установку.'); next(); }; },
+    () => { coach('Ключ продукта можно ввести и позже. Если нажать «У меня нет ключа», Windows установится, а активировать её можно будет в Параметрах. Ограничения без активации чисто косметические.');
+      W(`<h2>Активация Windows</h2><div class="d">Если это первая установка Windows на этом компьютере, введите действительный ключ продукта.</div>
+        <label>Ключ продукта</label><input type="text" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" id="pk">`,
+        `<button class="wlink" id="nokey">У меня нет ключа продукта</button><button class="wbtn" id="n" disabled>Далее</button>`);
+      $('#pk').oninput = e => $('#n').disabled = e.target.value.length < 5; $('#n').onclick = next; $('#nokey').onclick = () => { addXP(20); next(); }; },
+    () => { coach('<b>Home</b> хватает для игр и учёбы. В <b>Pro</b> есть BitLocker, удалённый рабочий стол и Hyper-V. Покупай ту редакцию, под которую у тебя есть ключ.');
+      let sel = -1;
+      W(`<h2>Выберите редакцию</h2><div class="d">Выберите операционную систему, которую следует установить.</div>
+        <table class="wtable"><tr><th>Операционная система</th><th>Архитектура</th></tr>${['Windows 11 Домашняя', 'Windows 11 Pro', 'Windows 11 Pro для рабочих станций', 'Windows 11 для образовательных учреждений'].map((n, j) => `<tr data-r="${j}"><td>${n}</td><td>x64</td></tr>`).join('')}</table>`,
+        `<span></span><button class="wbtn" id="n" disabled>Далее</button>`);
+      scr.querySelectorAll('tr[data-r]').forEach(r => r.onclick = () => { sel = +r.dataset.r; scr.querySelectorAll('tr').forEach(x => x.classList.toggle('sel', x === r)); $('#n').disabled = false; });
+      $('#n').onclick = next; },
+    () => { coach('Лицензионное соглашение. Галочка обязательна, иначе установка дальше не пойдёт.');
+      W(`<h2>Применимые уведомления и условия лицензии</h2><div class="d" style="height:120px;overflow:auto;background:#fff;border:1px solid #ccc;padding:10px;font-size:11.5px;color:#555">УСЛОВИЯ ЛИЦЕНЗИИ НА ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ MICROSOFT… Устанавливая программное обеспечение, вы принимаете эти условия. Если вы не принимаете их, не используйте программное обеспечение… (честно, их почти никто не читает 🙂)</div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="ag"> Я принимаю условия лицензии</label>`,
+        `<span></span><button class="wbtn" id="n" disabled>Принять</button>`);
+      $('#ag').onchange = e => $('#n').disabled = !e.target.checked; $('#n').onclick = next; },
+    () => { coach('<b>Важный момент!</b> Выбери, куда ставить Windows. Смотри на размер: 931 ГБ — это наш NVMe SSD, а 14,6 ГБ — установочная флешка. Перепутать их значит снести установщик.');
+      let sel = -1;
+      W(`<h2>Выберите расположение для установки Windows 11</h2>
+        <table class="wtable"><tr><th>Имя</th><th>Полный размер</th><th>Свободно</th><th>Тип</th></tr>
+        <tr data-r="0"><td>💽 Диск 0: незанятое пространство</td><td>931.5 ГБ</td><td>931.5 ГБ</td><td></td></tr>
+        <tr data-r="1"><td>🔌 Диск 1, раздел 1: ESD-USB</td><td>14.6 ГБ</td><td>8.2 ГБ</td><td>Основной</td></tr></table>
+        <div style="margin-top:10px;display:flex;gap:14px"><button class="wlink">Обновить</button><button class="wlink">Удалить раздел</button><button class="wlink">Загрузить драйвер</button></div>`,
+        `<span></span><button class="wbtn" id="n" disabled>Далее</button>`);
+      scr.querySelectorAll('tr[data-r]').forEach(r => r.onclick = () => { sel = +r.dataset.r; scr.querySelectorAll('tr').forEach(x => x.classList.toggle('sel', x === r)); $('#n').disabled = false; });
+      $('#n').onclick = () => { if (sel === 1) return bad('Это твоя <b>установочная флешка</b> (14,6 ГБ)! Выбирай незанятое пространство на Диске 0, то есть на NVMe SSD.'); addXP(40, 'правильный диск'); next(); }; },
+    async () => { coach('Идёт установка. Windows сама создаст нужные разделы (EFI, MSR, восстановления). Обычно это занимает 5–15 минут, у нас ускоренная перемотка ⏩');
+      const stg = ['Копирование файлов Windows', 'Подготовка файлов к установке', 'Установка компонентов', 'Установка обновлений', 'Завершение'];
+      scr.innerHTML = `<div class="win setup"><div class="wprog"><div class="spinner"><i></i><i></i><i></i><i></i><i></i></div><h2>Установка Windows 11</h2><div class="pp" id="pp">0% завершено</div><div class="wsteps">${stg.map((t, j) => `<div id="ws${j}">${t}</div>`).join('')}</div></div></div>`;
+      for (let j = 0; j < stg.length; j++) {
+        $('#ws' + j).className = 'on';
+        await tween(1.1, k => { const p = Math.round((j + k) / stg.length * 100); const el = $('#pp'); if (el) el.textContent = p + '% завершено'; drawScreen('setup', { p: (j + k) / stg.length }); }, k => k);
+        $('#ws' + j).className = 'ok';
+      }
+      next(); },
+    () => { coach('<b>Ловушка!</b> Компьютер перезагрузился, и флешка снова предлагает загрузиться с неё. Что делать?');
+      scr.innerHTML = `<div class="dos">Press any key to boot from CD or DVD<span id="dots"></span><div style="margin-top:60px;display:flex;gap:14px;font-family:Inter"><button class="btn ghost" id="anyk">⌨️ Нажать любую клавишу</button><button class="btn" id="wait">⏳ Ничего не трогать</button></div></div>`;
+      let d = 0; const iv = setInterval(() => { const el = $('#dots'); if (el) el.textContent = '.'.repeat(++d % 8); }, 250);
+      $('#anyk').onclick = () => bad('Нажмёшь клавишу, и установка начнётся <b>заново</b> с флешки! Здесь нужно просто подождать: компьютер сам загрузится с SSD. Можно даже вынуть флешку.');
+      $('#wait').onclick = () => { clearInterval(iv); addXP(50, 'не попался'); next(); }; },
+    () => { coach('Это <b>OOBE</b>, первоначальная настройка. Выбираем регион и раскладку.');
+      W(`<h2>Это правильная страна или регион?</h2><div class="d">Выберите регион.</div>
+        <table class="wtable">${['Россия', 'Беларусь', 'Казахстан', 'Узбекистан'].map((n, j) => `<tr class="${j ? '' : 'sel'}"><td>${n}</td></tr>`).join('')}</table>`, `<span></span><button class="wbtn" id="n">Да</button>`, 'oobe'); $('#n').onclick = next; },
+    () => { coach('Сеть нужна, чтобы Windows скачала обновления и драйверы. Сетевой драйвер на материнку Windows 11 обычно находит сама.');
+      W(`<h2>Подключимся к сети</h2><div class="d">Для продолжения настройки требуется подключение к Интернету.</div>
+        <div class="wopt sel"><span>🖧</span><div><b>Ethernet</b>Подключено</div></div><div class="wopt"><span>📶</span><div><b>FORGE_HOME_5G</b>Защищено</div></div>`,
+        `<span></span><button class="wbtn" id="n">Далее</button>`, 'oobe'); $('#n').onclick = next; },
+    () => { coach('Придумай имя компьютеру и войди в учётную запись. Аккаунт Microsoft даёт синхронизацию и автоматическую привязку лицензии к железу.');
+      W(`<h2>Давайте назовём ваш компьютер</h2><div class="d">Имя будет видно в сети и в Bluetooth.</div>
+        <input type="text" value="FORGE-PC" id="pcn"><label style="margin-top:16px">Учётная запись Microsoft</label><input type="text" value="me@outlook.com">`,
+        `<span></span><button class="wbtn" id="n">Далее</button>`, 'oobe'); $('#n').onclick = next; },
+    () => { coach('Параметры конфиденциальности. Тут можно отключить лишнюю телеметрию и рекламный идентификатор, на работу ПК это не влияет.');
+      W(`<h2>Выберите параметры конфиденциальности</h2>
+        ${['Определение местоположения', 'Найти устройство', 'Диагностические данные: только обязательные', 'Персонализированная реклама'].map((n, j) => `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:10px 0"><input type="checkbox" ${j < 3 ? 'checked' : ''}> ${n}</label>`).join('')}`,
+        `<span></span><button class="wbtn" id="n">Принять</button>`, 'oobe'); $('#n').onclick = next; },
+    async () => {
+      coach('Подготавливаем рабочий стол…');
+      scr.innerHTML = `<div class="win setup" style="background:linear-gradient(135deg,#1a2470,#3d58c9)"><div class="wprog"><div class="spinner"><i></i><i></i><i></i><i></i><i></i></div><h2>Привет!</h2><div class="pp">Это может занять несколько минут. Не выключайте компьютер.</div></div></div>`;
+      await sleep(2200); sfx.chime(); drawScreen('desktop'); next();
+    },
+    () => {
+      coach('<b>Windows установлена! 🎉</b> Остался последний шаг: правильно поставить драйверы. Отметь всё, что <b>нужно</b> сделать, и не попадись на вредные советы.');
+      const ITEMS = [
+        { t: 'Драйвер чипсета с сайта AMD/Intel или производителя платы', ok: true, e: 'Чипсет управляет USB, PCIe и энергосбережением. Свежий драйвер даёт стабильность и правильные режимы питания CPU.' },
+        { t: 'Драйвер видеокарты с официального сайта NVIDIA / AMD / Intel', ok: true, e: 'Без него игры будут тормозить или не запустятся. Windows ставит базовый драйвер, но он старый и урезанный.' },
+        { t: 'Скачать «DriverPack Ultimate 2026 (repack)» с форума', ok: false, e: 'Драйвер-паки с сомнительных сайтов часто ставят устаревшие драйверы, рекламу и майнеры. Качай только с официальных сайтов!' },
+        { t: 'Центр обновления Windows: установить все обновления', ok: true, e: 'Через него приходят патчи безопасности и часть драйверов. Перезагрузи ПК пару раз, пока обновления не закончатся.' },
+        { t: 'Поставить три антивируса для надёжности', ok: false, e: 'Антивирусы конфликтуют друг с другом и тормозят систему. Встроенного Microsoft Defender в 2026 году достаточно большинству людей.' },
+        { t: 'Проверить температуры в HWiNFO и стабильность под нагрузкой', ok: true, e: 'Короткий стресс-тест (Cinebench, OCCT) покажет, что охлаждение и XMP работают нормально. Нормальные температуры CPU в нагрузке до ~85 °C.' },
+      ];
+      const need = ITEMS.filter(x => x.ok).length; let got = 0;
+      scr.innerHTML = `<div class="desk"><div class="wapp"><div class="bar"><span>📋 Чек-лист после установки</span><span>— ▢ ✕</span></div><div class="in">${ITEMS.map((x, j) => `<div class="chk" data-j="${j}"><div class="bx"></div><div>${x.t}</div></div>`).join('')}<div id="drvE" style="margin-top:10px;font-size:12.5px;color:#333;min-height:38px"></div></div></div><div class="taskbar"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>`;
+      scr.querySelectorAll('.chk').forEach(c => c.onclick = () => {
+        const x = ITEMS[+c.dataset.j]; if (c.classList.contains('on')) return;
+        if (!x.ok) { c.classList.remove('bad'); void c.offsetWidth; c.classList.add('bad'); bad(x.e); return; }
+        c.classList.add('on'); c.querySelector('.bx').textContent = '✓'; sfx.ok(); got++; $('#drvE').innerHTML = '<b>✓</b> ' + x.e;
+        if (got === need) { addXP(150, 'Windows готова'); completeStep(s); setTimeout(() => { $('#screen').classList.remove('show'); finish(); }, 2200); coach('<b>Готово!</b> Компьютер собран, Windows установлена и обновлена. Ты справился! 🏆'); }
+      });
+    },
+  ];
+  screens[0]();
+}
+
+function skipSteps(n) {
+  const mount = (o, parent, pos, q = new THREE.Quaternion()) => { parent.add(o); o.position.set(...pos); o.quaternion.copy(q); };
+  STEPS.slice(0, n).forEach(s => {
+    if (s.type === 'install') mount(parts[s.part], s.parent(), s.pos, targetQuat(s));
+    if (s.type === 'ram') { mount(parts.ram1, board, [0.76, 0.72, 0.045]); mount(parts.ram2, board, [0.96, 0.72, 0.045]); }
+    if (s.type === 'paste') { pasteBlob = mesh(new THREE.SphereGeometry(0.06, 20, 14), std(0x9aa0aa, .35, .3), board, 0.15, 0.75, 0.072); pasteBlob.scale.set(1, 1, .45); }
+    if (s.id === 'gpu') { slotCovers.slice(0, 3).forEach(c => c.visible = false); gpuRear.visible = true; }
+    if (s.type === 'cables') CABLES.forEach(c => growCable(c.path, c.r, pcCase, c.mat || cableMat, 0.01));
+    if (s.type === 'close') { glass.visible = true; glass.position.z = 1.13; }
+    if (s.type === 'power') { G.powered = true; pwrRing.material.emissiveIntensity = 4; caseLight.intensity = 5; drawScreen('post'); }
+    installed.add(s.id);
+  });
+}
+
+/* =========================================================
+   FINISH / FREE MODE
+   ========================================================= */
+function finish() {
+  G.free = true; clearMarkers(); setObjective('Свободный режим: крути камеру и кликай по деталям, чтобы перечитать карточки', 'Сборка завершена 🏆');
+  const sec = Math.floor((performance.now() - G.t0) / 1000);
+  const rank = G.mist <= 2 ? 'Мастер сборки' : G.mist <= 6 ? 'Уверенный сборщик' : 'Начинающий сборщик';
+  flyCam({ p: [5.5, 5.2, 9.5], t: [1.5, 2.0, -1.0] }, 2.2);
+  $('#finalCard').innerHTML = `<div class="qlabel">◆ Урок пройден</div><div style="font-size:54px">🏆</div><div class="rank">${rank}</div>
+    <div style="color:var(--mut)">Компьютер собран, Windows установлена</div>
+    <div class="fstats"><div><b>${G.xp}</b><small>XP</small></div><div><b>${G.mist}</b><small>ошибок</small></div><div><b>${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}</b><small>время</small></div><div><b>${installed.size}/${STEPS.length}</b><small>этапов</small></div></div>
+    <div class="learned"><div>Совместимость сокета CPU и платы</div><div>Двухканальная память A2 + B2</div><div>NVMe M.2 и SATA</div><div>Термопаста размером с горошину</div><div>Стойки под материнкой</div><div>Подбор мощности БП</div><div>Видеокарта в верхний PCIe x16</div><div>Поток воздуха: вдув и выдув</div><div>24-pin, EPS, PCIe, CPU_FAN, F_PANEL</div><div>Монитор только в видеокарту</div><div>BIOS: XMP и порядок загрузки</div><div>Чистая установка Windows и драйверы</div></div>
+    <div style="display:flex;gap:10px;justify-content:center"><button class="btn" id="freeBtn">🔍 Осмотреть сборку</button><button class="btn ghost" id="againBtn">↺ Пройти заново</button></div>`;
+  $('#final').classList.add('show'); sfx.chime();
+  $('#freeBtn').onclick = () => { $('#final').classList.remove('show'); controls.autoRotate = true; controls.autoRotateSpeed = 0.6; };
+  $('#againBtn').onclick = () => location.reload();
+}
+
+/* =========================================================
+   POINTER / RAYCAST
+   ========================================================= */
+const ray = new THREE.Raycaster(); const ptr = new THREE.Vector2(); let downXY = null;
+function hitPart(e) {
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+  const roots = Object.values(parts).filter(p => p.parent); if (ghost) roots.push(ghost);
+  const hits = ray.intersectObjects(roots, true);
+  for (const h of hits) { let o = h.object; while (o && !o.userData.pickKey) o = o.parent; if (o) return o; }
+  return null;
+}
+renderer.domElement.addEventListener('pointerdown', e => { downXY = [e.clientX, e.clientY]; controls.autoRotate = false; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downXY || Math.hypot(e.clientX - downXY[0], e.clientY - downXY[1]) > 6) return;
+  const o = hitPart(e); if (!o) return;
+  const k = o.userData.pickKey;
+  if (G.free) { const id = PART_STEP[k]; if (id && INFO[id]) { sfx.click(); showInfo(id, true); } return; }
+  if (k === 'ghost') { const s = cur(); if (G.phase === 'place' && s.type === 'install') doPlace(s); return; }
+  if (o === board && board.parent !== scene && cur().id !== 'board') { showInfo('board', true); return; }
+  if (installed.has(PART_STEP[k]) || (k.startsWith('ram') && (o.parent === board))) { const id = PART_STEP[k]; showInfo(id, true); return; }
+  tryPick(k);
+});
+const tip = $('#tooltip');
+renderer.domElement.addEventListener('pointermove', e => {
+  const o = hitPart(e);
+  if (o) { const k = o.userData.pickKey; const id = k === 'ghost' ? null : PART_STEP[k]; tip.textContent = k === 'ghost' ? '◆ сюда' : (INFO[id] ? INFO[id].name : k); tip.style.opacity = 1; tip.style.left = e.clientX + 14 + 'px'; tip.style.top = e.clientY + 14 + 'px'; renderer.domElement.style.cursor = 'pointer'; }
+  else { tip.style.opacity = 0; renderer.domElement.style.cursor = ''; }
+});
+addEventListener('keydown', e => { if ((e.key === 'h' || e.key === 'р') && !G.free) $('#hintBtn').click(); });
+$('#hintBtn').onclick = () => {
+  const s = cur(); if (!s) return; sfx.click();
+  const H = {
+    install: G.phase === 'pick' ? `Найди на столе деталь с <b>пульсирующим кольцом</b> или кликни её в списке слева.` : `Кликни по <b>голубому призраку</b> детали или по метке «Установить сюда».`,
+    ram: G.phase === 'pick' ? 'Планки памяти стоят слева на коврике.' : 'Для двух планок используют <b>второй и четвёртый</b> слоты от процессора.',
+    paste: 'Кликни метку на процессоре.', cables: 'Выбери кабель в правой панели, потом найди его разъём на плате. 24-pin справа, EPS слева сверху, CPU_FAN у кулера, F_PANEL внизу справа, питание GPU на торце видеокарты.',
+    close: 'Кликни метку на стекле.', monitor: 'Видеовыход нужен у той детали, которая рисует картинку.', power: 'Кнопка питания на верхней панели корпуса.',
+  };
+  toast('💡 ' + (H[s.type] || 'Следуй указаниям на экране.'), '', 4500);
+};
+
+/* =========================================================
+   LOOP
+   ========================================================= */
+const clock = new THREE.Clock();
+function loop() {
+  requestAnimationFrame(loop);
+  const rawDt = clock.getDelta(), dt = Math.min(rawDt, 0.05), t = clock.elapsedTime;
+  runTweens(Math.min(rawDt, 1.0)); controls.update();
+  {
+    const L = innerWidth > 1100 && $('#inv').style.opacity === '1' ? 262 : 0;
+    const R = $('#info').classList.contains('show') ? $('#info').offsetWidth + 32 : 0;
+    const shift = (R - L) / 2 / innerWidth * camera.filmGauge;
+    if (Math.abs(camera.filmOffset - shift) > 1e-3) { camera.filmOffset += (shift - camera.filmOffset) * Math.min(1, dt * 4); camera.updateProjectionMatrix(); }
+  }
+  // hover bob
+  if (G.held && G.phase === 'place' && !G.busy) G.held.position.copy(G.holdBase).addScaledVector(G.holdN, Math.sin(t * 2.2) * 0.05);
+  if (ghost) ghostMat.opacity = .16 + Math.sin(t * 4) * .1;
+  if (pickRing.visible) { const s = 1 + Math.sin(t * 3) * 0.06; pickRing2.scale.setScalar(s); ringMat.opacity = .55 + Math.sin(t * 3) * .3; pickRing.rotation.z = t * .4; }
+  // fans & rgb
+  const spin = G.powered ? 14 : 0;
+  fans.forEach((f, i) => { f.userData.rotor.rotation.z += dt * spin * (1 + (i % 3) * .07); });
+  if (G.powered) rgbMats.forEach((m, i) => { m.emissive.setHSL((t * 0.06 + i * 0.045) % 1, 1, 0.55); m.emissiveIntensity = m.userData.base; });
+  // dust
+  const dp = dustGeo.attributes.position.array;
+  for (let i = 0; i < dustN; i++) { dp[i * 3 + 1] += Math.sin(t * .3 + i) * 0.0008 + 0.0006; if (dp[i * 3 + 1] > 6) dp[i * 3 + 1] = 0; }
+  dustGeo.attributes.position.needsUpdate = true;
+  if (G.t0 && !G.free) { const s = Math.floor((performance.now() - G.t0) / 1000); $('#time').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  updateMarkers();
+  composer.render();
+}
+loop();
+// intro idle orbit
+controls.autoRotate = true; controls.autoRotateSpeed = 0.35;
+
+$('#startBtn').disabled = false; $('#startBtn').textContent = '▶ Начать сборку';
+$('#startBtn').onclick = async () => {
+  AC = new (window.AudioContext || window.webkitAudioContext)(); sfx.ok();
+  $('#start').classList.add('hide'); controls.autoRotate = false;
+  ['#topbar', '#inv', '#objective'].forEach(s => $(s).style.opacity = 1);
+  G.t0 = performance.now();
+  const skip = new URLSearchParams(location.search).get('skip');
+  const skipTo = STEPS.findIndex(s => s.id === skip);
+  if (skipTo > 0) { skipSteps(skipTo); G.step = skipTo - 1; nextStep(); return; }
+  await flyCam(CAM.intro, 1.6);
+  toast('Добро пожаловать в мастерскую! Детали лежат на столе, корпус справа. <b>Начнём с «сердца» компьютера.</b>', '', 4500);
+  nextStep();
+};
+</script>
+</body>
+</html>

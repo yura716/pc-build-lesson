@@ -301,24 +301,50 @@ button{font-family:inherit;cursor:pointer}
 #game{flex:1;width:100%;min-height:0;display:block}
 .labStats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px;border-top:1px solid var(--line);background:#0a0e18}
 .labStats div{padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.04);font-size:10.5px;color:var(--mut);font-family:'JetBrains Mono'}
-.labStats b{display:block;font-family:Unbounded;font-size:17px;color:var(--txt);margin-top:2px}
+.labStats b{display:block;font-family:Unbounded;font-size:15px;white-space:nowrap;color:var(--txt);margin-top:2px}
 .labClose{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:3;padding:8px 14px}
 /* repair */
-#repair .card{width:min(980px,95vw);max-height:92vh;overflow:auto}
-.client{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
-.client .av{font-size:46px;line-height:1;filter:drop-shadow(0 0 14px rgba(155,107,255,.5))}
-.bubble{flex:1;padding:14px 16px;border-radius:4px 14px 14px 14px;background:rgba(155,107,255,.1);border:1px solid rgba(155,107,255,.35);font-size:14.5px;line-height:1.5}
-.bubble small{display:block;font-family:'JetBrains Mono';font-size:10.5px;color:var(--vi);letter-spacing:1.5px;margin-bottom:4px;text-transform:uppercase}
-.repGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.acts{display:flex;flex-direction:column;gap:7px}
-.act{text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-size:13px}
-.act:hover{border-color:var(--cy)}.act.used{opacity:.45;pointer-events:none}
-.logbox{border-radius:12px;background:#05080e;border:1px solid var(--line);padding:12px;font-family:'JetBrains Mono';font-size:12px;line-height:1.6;min-height:180px;max-height:260px;overflow:auto;color:#9fe8c0}
-.logbox div{margin-bottom:8px}.logbox i{color:var(--cy);font-style:normal}
-.diag{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
-.diag button{padding:10px 13px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-size:13px}
-.diag button:hover{border-color:var(--vi);background:rgba(155,107,255,.12)}
-.diag button.right{border-color:var(--ok);background:rgba(93,255,156,.12)}.diag button.wrong{border-color:var(--err);background:rgba(255,77,109,.12)}
+#game.aim{cursor:none}
+#repair .card{width:min(1140px,96vw);max-height:94vh;overflow:auto;padding:20px 24px}
+.repMain{display:grid;grid-template-columns:230px 1fr 310px;gap:16px}
+.cli{border-radius:16px;padding:16px 14px;background:linear-gradient(160deg,rgba(155,107,255,.16),rgba(56,245,255,.04));border:1px solid rgba(155,107,255,.3);text-align:center}
+.cli .av{font-size:74px;line-height:1.15;filter:drop-shadow(0 0 18px rgba(155,107,255,.6));animation:repBob 3s ease-in-out infinite;transition:transform .3s}
+.cli .who{font-family:'JetBrains Mono';font-size:10.5px;color:var(--vi);letter-spacing:1.5px;text-transform:uppercase;margin:4px 0 10px}
+.cli .say{text-align:left;font-size:13.5px;line-height:1.5;padding:12px;border-radius:4px 12px 12px 12px;background:rgba(0,0,0,.35);border:1px solid var(--line);min-height:110px}
+.mood{margin-top:12px;text-align:left;font-family:'JetBrains Mono';font-size:10.5px;color:var(--mut)}
+.mood .bar{height:8px;border-radius:5px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:5px}
+.mood .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--err),var(--warn),var(--ok));background-size:230px 100%;transition:width .6s}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tool{position:relative;overflow:hidden;text-align:left;padding:9px 11px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);font-size:12.5px;line-height:1.3;display:flex;gap:10px;align-items:center;min-height:58px;transition:.15s}
+.tool .ic{font-size:22px;flex:none}
+.tool small{display:block;color:var(--mut);font-family:'JetBrains Mono';font-size:10px;margin-top:3px}
+.tool:hover{border-color:var(--cy);transform:translateY(-1px);background:rgba(56,245,255,.07)}
+.tool.run{border-color:var(--cy)}.tool.run::after{content:'';position:absolute;left:0;bottom:0;height:3px;background:var(--cy);box-shadow:0 0 10px var(--cy);animation:repProg .9s linear forwards}
+.tool.used{opacity:.38;pointer-events:none}
+.term{margin-top:10px;border-radius:12px;background:#03060b;border:1px solid var(--line);font-family:'JetBrains Mono';font-size:12px;line-height:1.55;color:#9fe8c0;height:206px;overflow:auto;padding:10px 12px}
+.term .hd{color:var(--mut);font-size:10px;letter-spacing:1.5px;margin-bottom:6px}
+.term>div{margin-bottom:8px}.term i{color:var(--cy);font-style:normal}
+.term .cur{display:inline-block;width:7px;height:13px;background:#9fe8c0;vertical-align:-2px;animation:repBlink 1s steps(2) infinite}
+.bench{position:relative;border-radius:16px;padding:12px;background:#060a12;border:1px solid var(--line)}
+.pcbox{position:relative;height:340px;border-radius:12px;border:2px solid #2a3350;background:repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 2px,transparent 2px 8px),linear-gradient(180deg,#0d1220,#0a0e18);margin-top:8px}
+.mb{position:absolute;left:5%;top:4%;width:64%;height:64%;border-radius:8px;background:linear-gradient(135deg,#0f2a22,#0b1d19);border:1px solid #1f4a3c;font-family:'JetBrains Mono';font-size:8px;color:#3d7f68;padding:4px 6px}
+.zone{position:absolute;border-radius:7px;border:1px solid rgba(56,245,255,.4);background:rgba(10,16,28,.85);color:var(--txt);font-size:10.5px;font-family:'JetBrains Mono';display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;transition:.15s;padding:2px;line-height:1.2}
+.zone span{font-size:17px}
+.zone:hover{background:rgba(155,107,255,.3);border-color:var(--vi);box-shadow:0 0 18px rgba(155,107,255,.6);z-index:2;transform:scale(1.04)}
+.zone.right{background:rgba(93,255,156,.25);border-color:var(--ok);box-shadow:0 0 24px rgba(93,255,156,.7)}
+.zone.wrong{background:rgba(255,77,109,.25);border-color:var(--err);box-shadow:0 0 24px rgba(255,77,109,.7)}
+.zone.scan{animation:repScan .9s ease-in-out}
+.bench.lock .zone{pointer-events:none}
+.stamp{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) rotate(-14deg) scale(2.6);opacity:0;font-family:Unbounded;font-weight:900;font-size:30px;padding:8px 20px;border:5px solid currentColor;border-radius:12px;pointer-events:none;letter-spacing:3px;animation:repStamp .45s cubic-bezier(.2,1.6,.4,1) forwards;z-index:5;background:rgba(5,8,14,.75);white-space:nowrap}
+.coin{position:absolute;font-family:Unbounded;font-weight:800;color:var(--warn);pointer-events:none;animation:repCoin 1.6s ease-out forwards;z-index:6;font-size:22px;text-shadow:0 0 14px rgba(255,194,77,.7)}
+.chip{display:inline-block;padding:4px 9px;border-radius:7px;background:rgba(255,255,255,.05);border:1px solid var(--line);margin-right:6px}
+@keyframes repBob{50%{transform:translateY(-5px)}}
+@keyframes repProg{from{width:0}to{width:100%}}
+@keyframes repBlink{50%{opacity:0}}
+@keyframes repScan{50%{box-shadow:0 0 22px var(--cy);border-color:var(--cy);background:rgba(56,245,255,.25)}}
+@keyframes repStamp{to{opacity:1;transform:translate(-50%,-50%) rotate(-14deg) scale(1)}}
+@keyframes repCoin{to{transform:translateY(-90px);opacity:0}}
+@media (max-width:1000px){.repMain{grid-template-columns:1fr}}
 .repTop{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-family:'JetBrains Mono';font-size:12px;color:var(--mut)}
 .repTop b{color:var(--warn);font-family:'JetBrains Mono';font-size:15px}
 @media (max-width:1100px){#inv{display:none}#info{width:340px}}
@@ -1854,21 +1880,50 @@ function perf() {
   return { fps, low, fCpu, fGpu, cpuL: Math.min(100, fps / fCpu * 100), gpuL: Math.min(99, fps / fGpu * 99), vram, vNeed: Math.min(vNeed, vram + 4), vNote, price, bott: fCpu < fGpu ? 'cpu' : 'gpu' };
 }
 let labRAF = 0, labLast = 0, frameTimes = [], labT = 0;
+const STARS = Array.from({ length: 80 }, () => [Math.random(), Math.random() * .85, Math.random()]);
+const GS = { best: 0, mx: -1, my: -1 };
+function resetGame() { Object.assign(GS, { px: 0, lane: 0, d: 0, spd: 24, obs: [], parts: [], score: 0, over: false, shake: 0, flash: 0, spawn: 1.2, combo: 1, tg: [], drawn: [], hits: 0, shots: 0, miss: 0, rt: [], spawnT: .3 }); }
+resetGame();
+function labKey(e) {
+  if (!labRAF || cfg.game !== 'aaa') return;
+  const k = e.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a' || k === 'ф') { GS.lane = Math.max(-1, GS.lane - 1); e.preventDefault(); }
+  else if (k === 'arrowright' || k === 'd' || k === 'в') { GS.lane = Math.min(1, GS.lane + 1); e.preventDefault(); }
+  else if ((k === ' ' || k === 'enter') && GS.over) { resetGame(); e.preventDefault(); }
+}
+function boom(x, y, c, n) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 60 + Math.random() * 240; GS.parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, l: .5 + Math.random() * .5, c }); } }
+function labShoot(x, y) {
+  if (cfg.game === 'aaa') {
+    if (GS.over) { resetGame(); sfx.click(); return; }
+    GS.lane = Math.max(-1, Math.min(1, GS.lane + (x < $('#game').clientWidth / 2 ? -1 : 1))); return;
+  }
+  GS.shots++;
+  const hit = GS.drawn.find(t => !t.ref.dead && Math.hypot(t.x - x, t.y - y) < t.r + 3);
+  if (hit) { hit.ref.dead = 1; GS.hits++; GS.rt.push(performance.now() - hit.ref.born); boom(hit.x, hit.y, '#ff4d6d', 16); boom(hit.x, hit.y, '#fff', 6); sfx.click(); }
+  else boom(x, y, '#556', 4);
+}
+const poly = (g, pts) => { g.beginPath(); pts.forEach((v, i) => i ? g.lineTo(v[0], v[1]) : g.moveTo(v[0], v[1])); g.closePath(); g.fill(); };
 function openLab() {
   if (G.phase === 'bios' || G.phase === 'windows') { toast('Сначала закончи текущий этап на экране', '', 2000); return; }
   $('#screen').classList.add('show');
   $('#scr').innerHTML = `<div class="lab"><div class="labL" id="labL"></div><div class="labR"><button class="btn ghost labClose" id="labX">✕ Закрыть</button><canvas id="game"></canvas><div class="labStats" id="labS"></div></div></div>`;
   $('#labX').onclick = closeLab;
+  const cv = $('#game');
+  cv.onpointermove = e => { GS.mx = e.offsetX; GS.my = e.offsetY; };
+  cv.onpointerleave = () => { GS.mx = -1; };
+  cv.onpointerdown = e => labShoot(e.offsetX, e.offsetY);
+  addEventListener('keydown', labKey); resetGame();
   renderLab(); cancelAnimationFrame(labRAF); labRAF = requestAnimationFrame(gameLoop);
 }
-function closeLab() { cancelAnimationFrame(labRAF); labRAF = 0; $('#screen').classList.remove('show'); }
+function closeLab() { cancelAnimationFrame(labRAF); labRAF = 0; removeEventListener('keydown', labKey); $('#screen').classList.remove('show'); }
 const rub = n => n.toLocaleString('ru-RU') + ' ₽';
 function renderLab(changed) {
   const grp = (k, title) => `<h5>${title}</h5>` + LAB[k].map(x => `<div class="cfg ${cfg[k] === x.id ? 'on' : ''}" data-k="${k}" data-v="${x.id}"><div><b>${x.name}</b><small>${x.sub}</small></div><span class="pr">${x.price ? rub(x.price) : '—'}</span></div>`).join('');
   const seg = (k, obj) => `<div class="seg">${Object.entries(obj).map(([id, v]) => `<button data-k="${k}" data-v="${id}" class="${cfg[k] === id ? 'on' : ''}">${v.n || v.name}</button>`).join('')}</div>`;
   $('#labL').innerHTML = `<h5>Игра</h5>${seg('game', GAMES)}<h5>Разрешение</h5>${seg('res', RES)}${grp('cpu', 'Процессор')}${grp('gpu', 'Видеокарта')}${grp('ram', 'Оперативная память')}
     <div style="font-size:11px;color:var(--mut);margin-top:10px">Плата, БП, SSD и корпус: ${rub(BASE_PRICE)}</div>`;
-  $('#labL').querySelectorAll('[data-k]').forEach(el => el.onclick = () => { cfg[el.dataset.k] = el.dataset.v; sfx.click(); renderLab(el.dataset.k); });
+  $('#labL').querySelectorAll('[data-k]').forEach(el => el.onclick = () => { if (el.dataset.k === 'game' && cfg.game !== el.dataset.v) resetGame(); cfg[el.dataset.k] = el.dataset.v; sfx.click(); renderLab(el.dataset.k); });
+  $('#game').classList.toggle('aim', cfg.game === 'esp');
   const p = perf();
   const S = (l, v, c = '') => `<div>${l}<b style="${c}">${v}</b></div>`;
   if (p.none) {
@@ -1893,34 +1948,194 @@ function gameLoop(now) {
   if (now - labLast < interval * jitter && labLast) return;
   const dt = Math.min(.25, (now - (labLast || now)) / 1000); labLast = now; labT += dt;
   frameTimes.push(dt * 1000); if (frameTimes.length > 90) frameTimes.shift();
-  const W = cv.clientWidth, H = cv.clientHeight; if (cv.width !== W) { cv.width = W; cv.height = H; }
+  const W = cv.clientWidth, H = cv.clientHeight; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
   const g = cv.getContext('2d');
   if (p.none) { g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.fillStyle = '#38f5ff'; g.font = '600 18px JetBrains Mono'; g.textAlign = 'center'; g.fillText('NO SIGNAL', W / 2, H / 2); g.textAlign = 'left'; return; }
-  const esp = cfg.game === 'esp', hz = H * .52, t = labT;
-  const sky = g.createLinearGradient(0, 0, 0, hz);
-  sky.addColorStop(0, esp ? '#06121e' : '#120626'); sky.addColorStop(1, esp ? '#0e4a5a' : '#ff3d8b'); g.fillStyle = sky; g.fillRect(0, 0, W, hz);
-  g.fillStyle = esp ? '#9ff' : '#ffd36b'; g.beginPath(); g.arc(W / 2, hz - 10, H * .17, PI, 0); g.fill();
-  g.fillStyle = esp ? '#06121e' : '#120626'; for (let i = 0; i < 6; i++) g.fillRect(W / 2 - H * .18, hz - 18 - i * i * 3.2, H * .36, 2 + i * .6);
-  g.fillStyle = esp ? '#08202a' : '#2a0b3d'; g.beginPath(); g.moveTo(0, hz);
-  for (let x = 0; x <= W; x += 40) g.lineTo(x, hz - 30 - Math.abs(Math.sin(x * .013 + 1)) * 60 - Math.sin(x * .05) * 10); g.lineTo(W, hz); g.fill();
-  g.fillStyle = '#05030c'; g.fillRect(0, hz, W, H - hz);
-  g.strokeStyle = esp ? '#38f5ff' : '#ff4fd8'; g.lineWidth = 1.5; g.shadowColor = g.strokeStyle; g.shadowBlur = 8;
-  for (let i = -20; i <= 20; i++) { g.beginPath(); g.moveTo(W / 2 + i * 20, hz); g.lineTo(W / 2 + i * W * .16, H); g.stroke(); }
-  const sp = (t * 1.6) % 1;
-  for (let i = 0; i < 14; i++) { const z = (i + sp) / 14, y = hz + (H - hz) * z * z; g.globalAlpha = z; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-  g.globalAlpha = 1; g.shadowBlur = 0;
-  for (let i = 0; i < 10; i++) { const z = ((i / 10 + t * .35) % 1), s = z * z, x = W / 2 + (i % 2 ? 1 : -1) * (40 + s * W * .55), y = hz + (H - hz) * s, h = 10 + s * 160;
-    g.fillStyle = `rgba(${esp ? '56,245,255' : '155,107,255'},${.25 + s * .6})`; g.fillRect(x - s * 30, y - h, s * 60, h); }
-  if (esp) { g.strokeStyle = '#5dff9c'; g.lineWidth = 2; const cx = W / 2, cy = H * .55; [[-14, 0, -5, 0], [5, 0, 14, 0], [0, -14, 0, -5], [0, 5, 0, 14]].forEach(a => { g.beginPath(); g.moveTo(cx + a[0], cy + a[1]); g.lineTo(cx + a[2], cy + a[3]); g.stroke(); }); }
-  else { const cx = W / 2 + Math.sin(t * 1.3) * W * .08, cy = H * .86; g.fillStyle = '#0d0f18'; g.fillRect(cx - 60, cy - 22, 120, 34); g.fillStyle = '#ff4fd8'; g.shadowColor = '#ff4fd8'; g.shadowBlur = 16; g.fillRect(cx - 56, cy - 2, 26, 6); g.fillRect(cx + 30, cy - 2, 26, 6); g.shadowBlur = 0; g.fillStyle = '#20243a'; g.fillRect(cx - 40, cy - 38, 80, 18); }
+  g.save();
+  if (GS.shake > 0) { g.translate((Math.random() - .5) * 22 * GS.shake, (Math.random() - .5) * 22 * GS.shake); GS.shake = Math.max(0, GS.shake - dt); }
+  if (cfg.game === 'aaa') drawRace(g, W, H, dt, p); else drawAim(g, W, H, dt, now);
+  GS.parts.forEach(q => { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 320 * dt; q.l -= dt; g.globalAlpha = Math.max(0, Math.min(1, q.l * 1.8)); g.fillStyle = q.c; g.fillRect(q.x - 2, q.y - 2, 4, 4); });
+  g.globalAlpha = 1; GS.parts = GS.parts.filter(q => q.l > 0);
+  g.restore();
+  if (GS.flash > 0) { g.fillStyle = `rgba(255,255,255,${GS.flash * .7})`; g.fillRect(0, 0, W, H); GS.flash = Math.max(0, GS.flash - dt * 3); }
+  if (cfg.game === 'aaa' && GS.over) drawCrash(g, W, H, p);
+  drawOSD(g, W, H, p);
+}
+
+const RACE = { camH: 2.3, near: 2.2, carZ: 3.4 };
+function raceView(W, H) { const hz = H * .46; return { hz, F: (H - hz) * 2.2 / RACE.camH, camX: GS.px * 3 * .55 }; }
+function stepRace(dt, W, H) {
+  if (GS.over) return;
+  GS.spd = Math.min(62, GS.spd + dt * .9); GS.d += GS.spd * dt; GS.score += GS.spd * dt * GS.combo * .4;
+  GS.px += (GS.lane - GS.px) * Math.min(1, dt * 13);
+  GS.spawn -= dt;
+  if (GS.spawn <= 0) {
+    GS.spawn = Math.max(.32, 1.15 - GS.spd / 75);
+    const lane = (Math.random() * 3 | 0) - 1;
+    if (Math.random() < .3) GS.obs.push({ lane, z: 95, orb: 1 });
+    else {
+      GS.obs.push({ lane, z: 95, v: 6 + Math.random() * 8, c: ['#ff4d6d', '#ffc24d', '#9b6bff', '#38f5ff'][Math.random() * 4 | 0] });
+      if (GS.spd > 32 && Math.random() < .3) GS.obs.push({ lane: lane === 1 ? -1 : lane + 1, z: 102, v: 10, c: '#ffc24d' });
+    }
+  }
+  GS.obs.forEach(o => { o.z -= (GS.spd - (o.v || 0)) * dt; });
+  for (const o of GS.obs) {
+    if (o.dead || o.z > RACE.carZ + 1 || o.z < RACE.carZ - .9 || Math.abs(o.lane - GS.px) > .55) continue;
+    const { hz, F, camX } = raceView(W, H), s = F / RACE.carZ, x = W / 2 + (o.lane * 3 - camX) * s, y = hz + RACE.camH * s - s * .6;
+    if (o.orb) { o.dead = 1; GS.score += 150 * GS.combo; GS.combo = Math.min(9, GS.combo + 1); boom(x, y, '#5dff9c', 22); sfx.click(); }
+    else { GS.over = true; GS.shake = .6; GS.flash = 1; GS.best = Math.max(GS.best, GS.score); boom(x, y, '#ff4fd8', 30); boom(x, y, '#ffc24d', 20); sfx.err(); }
+  }
+  GS.obs = GS.obs.filter(o => !o.dead && o.z > 1);
+}
+function drawCar(g, x, y, s, col, me, tilt) {
+  const w = 1.9 * s, h = .95 * s;
+  g.save(); g.translate(x, y); g.rotate(tilt * .12);
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.beginPath(); g.ellipse(0, 0, w * .62, h * .14, 0, 0, 7); g.fill();
+  g.fillStyle = '#05030a'; g.fillRect(-w * .49, -h * .2, w * .17, h * .2); g.fillRect(w * .32, -h * .2, w * .17, h * .2);
+  g.fillStyle = me ? '#1d1433' : '#15111f'; poly(g, [[-w / 2, -h * .16], [w / 2, -h * .16], [w * .47, -h * .6], [-w * .47, -h * .6]]);
+  g.fillStyle = me ? '#2b1f4d' : '#211a33'; poly(g, [[-w * .37, -h * .6], [w * .37, -h * .6], [w * .27, -h], [-w * .27, -h]]);
+  g.fillStyle = me ? 'rgba(56,245,255,.35)' : 'rgba(255,255,255,.1)'; poly(g, [[-w * .31, -h * .64], [w * .31, -h * .64], [w * .23, -h * .94], [-w * .23, -h * .94]]);
+  g.shadowColor = col; g.shadowBlur = me ? 24 : 14; g.fillStyle = col;
+  g.fillRect(-w * .46, -h * .5, w * .3, h * .11); g.fillRect(w * .16, -h * .5, w * .3, h * .11);
+  if (me) {
+    g.fillRect(-w * .16, -h * .46, w * .32, h * .04);
+    g.strokeStyle = col; g.lineWidth = 1.5; g.beginPath(); g.moveTo(-w * .47, -h * .6); g.lineTo(w * .47, -h * .6); g.stroke();
+    g.shadowColor = '#38f5ff'; g.fillStyle = `rgba(56,245,255,${.4 + Math.random() * .6})`;
+    g.beginPath(); g.ellipse(-w * .26, -h * .1, w * .05, h * .05 + Math.random() * h * .04, 0, 0, 7); g.ellipse(w * .26, -h * .1, w * .05, h * .05 + Math.random() * h * .04, 0, 0, 7); g.fill();
+  }
+  g.restore();
+}
+function drawRace(g, W, H, dt, p) {
+  for (let s = dt; s > 0; s -= 1 / 120) stepRace(Math.min(s, 1 / 120), W, H);
+  const { hz, F, camX } = raceView(W, H), camH = RACE.camH, t = labT, NEAR = RACE.near, FAR = 160;
+  const P = (x, z, y = 0) => { const s = F / z; return [W / 2 + (x - camX) * s, hz + (camH - y) * s, s]; };
+  const sky = g.createLinearGradient(0, 0, 0, hz); sky.addColorStop(0, '#07021a'); sky.addColorStop(.55, '#3a0b52'); sky.addColorStop(1, '#ff3d8b');
+  g.fillStyle = sky; g.fillRect(-30, -30, W + 60, hz + 30);
+  g.fillStyle = '#fff'; STARS.forEach(([x, y, k]) => { g.globalAlpha = (.25 + .75 * Math.abs(Math.sin(t * 1.5 + k * 9))) * (1 - y); g.fillRect(x * W, y * hz * .8, 1.6, 1.6); }); g.globalAlpha = 1;
+  const sx = W / 2 - camX * 8, sr = H * .21;
+  const sg = g.createLinearGradient(0, hz - sr, 0, hz); sg.addColorStop(0, '#fff07a'); sg.addColorStop(.6, '#ff9a3d'); sg.addColorStop(1, '#ff3d8b');
+  g.save(); g.shadowColor = '#ff4fd8'; g.shadowBlur = 50; g.fillStyle = sg; g.beginPath(); g.arc(sx, hz, sr, PI, 0); g.fill(); g.restore();
+  g.fillStyle = sky; for (let i = 0; i < 8; i++) g.fillRect(sx - sr, hz - sr * .06 - i * i * sr * .014 - i * sr * .03, sr * 2, 1.5 + i * .8);
+  const mtn = (col, edge, a, f, par, base) => {
+    g.fillStyle = col; g.beginPath(); g.moveTo(-30, hz);
+    for (let x = -30; x <= W + 30; x += 14) { const u = x + camX * par; g.lineTo(x, hz - base - Math.abs(Math.sin(u * f)) * a - Math.sin(u * f * 3.7) * a * .18); }
+    g.lineTo(W + 30, hz); g.fill(); if (edge) { g.strokeStyle = edge; g.lineWidth = 1.2; g.stroke(); }
+  };
+  mtn('#22083a', null, H * .15, .006, 25, 6); mtn('#12042a', 'rgba(255,79,216,.45)', H * .085, .012, 55, 0);
+  g.fillStyle = '#06020e'; g.fillRect(-30, hz, W + 60, H - hz + 30);
+  g.strokeStyle = 'rgba(255,79,216,.5)'; g.lineWidth = 1;
+  for (let i = 0; i < 32; i++) { const z = NEAR + i * 5 - (GS.d % 5); if (z < NEAR) continue; const y = hz + camH * F / z; g.globalAlpha = Math.min(1, 8 / z); g.beginPath(); g.moveTo(-30, y); g.lineTo(W + 30, y); g.stroke(); }
+  g.globalAlpha = .55;
+  for (let i = -14; i <= 14; i++) { const a = P(i * 4, NEAR), b = P(i * 4, FAR); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
+  g.globalAlpha = 1;
+  const rw = 5.2, rg = g.createLinearGradient(0, hz, 0, H); rg.addColorStop(0, '#0e0820'); rg.addColorStop(1, '#1d1236');
+  g.fillStyle = rg; poly(g, [P(-rw, NEAR), P(rw, NEAR), P(rw, FAR), P(-rw, FAR)]);
+  g.save(); g.lineWidth = 3; g.shadowBlur = 14;
+  [-rw, rw].forEach(x => { g.strokeStyle = g.shadowColor = '#38f5ff'; const a = P(x, NEAR), b = P(x, FAR); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); });
+  g.restore();
+  g.fillStyle = 'rgba(255,255,255,.8)';
+  for (const lx of [-1.5, 1.5]) for (let i = 0; i < 24; i++) {
+    const z0 = Math.max(NEAR, NEAR + i * 7 - (GS.d % 7)), z1 = NEAR + i * 7 - (GS.d % 7) + 3; if (z1 <= NEAR) continue;
+    poly(g, [P(lx - .09, z0), P(lx + .09, z0), P(lx + .09, z1), P(lx - .09, z1)]);
+  }
+  const props = [];
+  for (let i = 0; i < 13; i++) { const n = Math.floor(GS.d / 12) + i, z = n * 12 - GS.d + 3; if (z > 2.6) props.push({ z, n }); }
+  props.reverse().forEach(({ z, n }) => [-1, 1].forEach(side => {
+    const hs = Math.abs(Math.sin(n * 12.9898 + side * 78.233) * 43758.5) % 1, h = 3 + hs * 10, w = 2.6 + hs * 2.2, x = side * (8.2 + hs * 3);
+    const a = P(x - w / 2, z, h), b = P(x + w / 2, z, 0), col = (n + (side > 0 ? 1 : 0)) % 2 ? '56,245,255' : '255,79,216';
+    g.globalAlpha = Math.max(0, Math.min(1, (FAR - z) / 60));
+    g.fillStyle = '#0b0618'; g.fillRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+    g.strokeStyle = `rgb(${col})`; g.lineWidth = Math.max(1, a[2] * .05); g.strokeRect(a[0], a[1], b[0] - a[0], b[1] - a[1]);
+    if (a[2] > 7) { g.fillStyle = `rgba(${col},.55)`; for (let yy = .9; yy < h - .4; yy += 1.2) for (let xx = -w / 2 + .5; xx < w / 2 - .4; xx += .9) if (Math.sin(n * 7 + yy * 13 + xx * 5) > .1) { const q = P(x + xx, z, h - yy); g.fillRect(q[0], q[1], a[2] * .45, a[2] * .5); } }
+    g.globalAlpha = 1;
+  }));
+  [...GS.obs].sort((a, b) => b.z - a.z).forEach(o => {
+    if (o.z < NEAR + .1) return;
+    const [x, y, s] = P(o.lane * 3, o.z);
+    g.globalAlpha = Math.max(0, Math.min(1, (100 - o.z) / 20));
+    if (o.orb) {
+      const r = s * .38 * (1 + .14 * Math.sin(t * 9)), yy = y - s * .75;
+      g.save(); g.shadowColor = '#5dff9c'; g.shadowBlur = 24; g.fillStyle = '#5dff9c'; g.beginPath(); g.arc(x, yy, r, 0, 7); g.fill();
+      g.fillStyle = '#eafff2'; g.beginPath(); g.arc(x, yy, r * .45, 0, 7); g.fill(); g.restore();
+    } else drawCar(g, x, y, s, o.c, false, 0);
+    g.globalAlpha = 1;
+  });
+  const pp = P(GS.px * 3, RACE.carZ);
+  if (!GS.over) drawCar(g, pp[0], pp[1], pp[2], '#ff4fd8', true, GS.lane - GS.px);
+  if (GS.spd > 34 && !GS.over) {
+    g.strokeStyle = 'rgba(255,255,255,.22)'; g.lineWidth = 1;
+    for (let i = 0; i < (GS.spd - 32) / 1.5; i++) { const a = Math.random() * 6.28, r0 = W * (.28 + Math.random() * .3), r1 = r0 + 30 + Math.random() * 70; g.beginPath(); g.moveTo(W / 2 + Math.cos(a) * r0, hz + Math.sin(a) * r0 * .6); g.lineTo(W / 2 + Math.cos(a) * r1, hz + Math.sin(a) * r1 * .6); g.stroke(); }
+  }
+  g.textAlign = 'right';
+  g.fillStyle = '#aaa'; g.font = '600 11px JetBrains Mono'; g.fillText(`РЕКОРД ${Math.floor(Math.max(GS.best, GS.score)).toLocaleString('ru-RU')}`, W - 20, H - 70);
+  g.fillStyle = '#fff'; g.font = '800 24px Unbounded'; g.fillText(Math.floor(GS.score).toLocaleString('ru-RU'), W - 20, H - 42);
+  g.font = '700 12px JetBrains Mono'; g.fillStyle = GS.combo > 1 ? '#5dff9c' : '#aaa'; g.fillText(`x${GS.combo} комбо · ${Math.round(GS.spd * 4.2)} км/ч`, W - 20, H - 22);
+  g.textAlign = 'center';
+  if (GS.d < 140 && !GS.over) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(W / 2 - 200, H * .4 - 17, 400, 26); g.fillStyle = '#38f5ff'; g.font = '600 11px JetBrains Mono'; g.fillText('← → / A D / клик по краю: смена полосы · лови зелёные сферы', W / 2, H * .4); }
+  g.textAlign = 'left';
+}
+function drawCrash(g, W, H, p) {
+  g.fillStyle = 'rgba(5,2,12,.62)'; g.fillRect(0, 0, W, H);
+  const y = H * .4; g.textAlign = 'center';
+  g.save(); g.font = '900 46px Unbounded'; g.fillStyle = '#ff4d6d'; g.shadowColor = '#ff4d6d'; g.shadowBlur = 24; g.fillText('CRASH', W / 2, y); g.restore();
+  g.font = '700 16px JetBrains Mono'; g.fillStyle = '#fff'; g.fillText(`Очки: ${Math.floor(GS.score).toLocaleString('ru-RU')}   ·   Рекорд: ${Math.floor(GS.best).toLocaleString('ru-RU')}`, W / 2, y + 38);
+  g.font = '13px JetBrains Mono';
+  if (p.fps < 50) { g.fillStyle = '#ffc24d'; g.fillText(`При ${Math.round(p.fps)} FPS кадр обновляется раз в ${Math.round(1000 / p.fps)} мс: ты видишь машины позже и реагируешь хуже`, W / 2, y + 66); }
+  else { g.fillStyle = '#5dff9c'; g.fillText(`${Math.round(p.fps)} FPS: картинка плавная, проиграл честно 😉`, W / 2, y + 66); }
+  g.fillStyle = '#38f5ff'; g.fillText('Пробел или клик: заново', W / 2, y + 94); g.textAlign = 'left';
+}
+function drawAim(g, W, H, dt, now) {
+  const hz = H * .44, t = labT;
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#030b14'); bg.addColorStop(.44, '#0b2a3a'); bg.addColorStop(.44, '#02060b'); bg.addColorStop(1, '#071a26');
+  g.fillStyle = bg; g.fillRect(-30, -30, W + 60, H + 60);
+  g.strokeStyle = 'rgba(56,245,255,.1)'; g.lineWidth = 1;
+  for (let x = 6; x < W; x += 64) g.strokeRect(x, 16, 56, hz - 26);
+  g.fillStyle = 'rgba(56,245,255,.5)'; g.font = '700 10px JetBrains Mono'; g.textAlign = 'center';
+  g.fillText('ARENA STRIKE · AIM TRAINING', W / 2, hz - 12); g.textAlign = 'left';
+  g.strokeStyle = 'rgba(56,245,255,.3)';
+  for (let i = -18; i <= 18; i++) { g.beginPath(); g.moveTo(W / 2 + i * 28, hz); g.lineTo(W / 2 + i * W * .2, H); g.stroke(); }
+  for (let i = 1; i < 14; i++) { const k = (i + (t * .3 % 1)) / 14, y = hz + (H - hz) * k * k; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  g.fillStyle = 'rgba(56,245,255,.18)'; g.fillRect(0, hz - 1, W, 2);
+  GS.spawnT -= dt;
+  if (GS.spawnT <= 0 && GS.tg.filter(o => !o.dead).length < 3) { GS.spawnT = .5 + Math.random() * .3; GS.tg.push({ x: .1 + Math.random() * .8, y: .14 + Math.random() * .66, born: now, life: 1600 }); }
+  GS.drawn = [];
+  const R0 = Math.min(W, H) * .06;
+  GS.tg.forEach(o => {
+    if (o.dead) return;
+    const age = (now - o.born) / o.life;
+    if (age >= 1) { o.dead = 1; GS.miss++; return; }
+    const r = R0 * Math.sin(PI * age) + 4, x = o.x * W, y = o.y * H;
+    g.save(); g.shadowColor = '#ff4d6d'; g.shadowBlur = 22;
+    g.fillStyle = '#ff4d6d'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.shadowBlur = 0;
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, r * .66, 0, 7); g.fill();
+    g.fillStyle = '#ff4d6d'; g.beginPath(); g.arc(x, y, r * .33, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + 6, -PI / 2, -PI / 2 + (1 - age) * 6.283); g.stroke();
+    g.restore();
+    GS.drawn.push({ x, y, r, ref: o });
+  });
+  GS.tg = GS.tg.filter(o => !o.dead);
+  if (GS.mx >= 0) {
+    const x = GS.mx, y = GS.my; g.strokeStyle = '#5dff9c'; g.lineWidth = 2;
+    [[-14, 0, -5, 0], [5, 0, 14, 0], [0, -14, 0, -5], [0, 5, 0, 14]].forEach(a => { g.beginPath(); g.moveTo(x + a[0], y + a[1]); g.lineTo(x + a[2], y + a[3]); g.stroke(); });
+    g.fillStyle = '#5dff9c'; g.fillRect(x - 1, y - 1, 2, 2);
+  }
+  const acc = GS.shots ? Math.round(GS.hits / GS.shots * 100) : 0, rt = GS.rt.length ? Math.round(GS.rt.reduce((a, b) => a + b, 0) / GS.rt.length) : 0;
+  g.textAlign = 'right';
+  g.fillStyle = '#fff'; g.font = '800 24px Unbounded'; g.fillText(`${GS.hits} 🎯`, W - 20, H - 42);
+  g.font = '700 12px JetBrains Mono'; g.fillStyle = '#5dff9c'; g.fillText(`точность ${acc}% · реакция ${rt || '—'} мс · пропущено ${GS.miss}`, W - 20, H - 22);
+  g.textAlign = 'center';
+  if (GS.shots < 3) { g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(W / 2 - 240, H * .9 - 18, 480, 28); g.fillStyle = '#38f5ff'; g.font = '600 12px JetBrains Mono'; g.fillText('Кликай по мишеням! Сравни точность при 30 и при 240 FPS', W / 2, H * .9); }
+  g.textAlign = 'left';
+}
+function drawOSD(g, W, H, p) {
   const shownFps = Math.round(p.fps * (0.96 + Math.random() * .08));
   g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(12, 12, 230, 132);
   g.font = '700 13px JetBrains Mono'; const col = p.fps >= 60 ? '#5dff9c' : p.fps >= 30 ? '#ffc24d' : '#ff4d6d';
   const lines = [[`FPS ${shownFps}`, col], [`1% low ${Math.round(p.low)}`, '#ddd'], [`CPU ${Math.round(p.cpuL)}%  ${(60 + p.cpuL * .25).toFixed(0)}°C`, p.bott === 'cpu' ? '#ffc24d' : '#ddd'], [`GPU ${Math.round(p.gpuL)}%  ${(45 + p.gpuL * .3).toFixed(0)}°C`, p.bott === 'gpu' ? '#38f5ff' : '#ddd'], [`VRAM ${Math.min(p.vNeed, p.vram).toFixed(1)} / ${p.vram} GB`, p.vNote ? '#ff4d6d' : '#ddd'], [`RAM ${pick('ram').gb} GB · ${RES[cfg.res].n}`, '#ddd']];
   lines.forEach(([s, c], i) => { g.fillStyle = c; g.fillText(s, 22, 32 + i * 18); });
   g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(W - 212, 12, 200, 60); g.strokeStyle = col; g.lineWidth = 1.5; g.beginPath();
-  frameTimes.forEach((ft, i) => { const x = W - 208 + i * 2.1, y = 66 - Math.min(50, ft * 1.2); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
-  g.fillStyle = '#aaa'; g.font = '10px JetBrains Mono'; g.fillText('frametime, ms', W - 204, 26);
+  frameTimes.forEach((ft, i) => { const x = W - 208 + i * 2.1, y = 66 - Math.min(44, ft * 1.2); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+  g.fillStyle = '#aaa'; g.font = '10px JetBrains Mono'; g.fillText('frametime, ms', W - 204, 24);
   g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 15px Unbounded'; g.fillText(GAMES[cfg.game].name.toUpperCase(), 22, H - 20);
 }
 $('#labBtn').onclick = () => { sfx.click(); openLab(); };
@@ -1952,33 +2167,81 @@ const CASES = [
     acts: [['Температуры и стресс-тест', 'Всё стабильно: CPU 65 °C, GPU 70 °C.'], ['Посмотреть версию драйвера видеокарты', 'Драйвер 2022 года, его поставила сама Windows.'], ['MemTest86', 'Ошибок нет.'], ['Посмотреть журнал ошибок игры', '«DXGI_ERROR_DEVICE_REMOVED: требуется более новый драйвер».']],
     ans: 'soft', why: 'Железо исправно, а проблема только в одной новой игре со старым драйвером. Это <b>программная проблема</b>: поставить свежий драйвер с сайта NVIDIA/AMD.' },
 ];
-const R = { i: 0, money: 0, rep: 0, used: 0, done: false };
-function openRepair() { R.i = 0; R.money = 0; R.rep = 0; $('#repair').classList.add('show'); renderClient(); }
-function renderClient() {
-  const c = CASES[R.i]; R.used = 0; R.done = false;
-  $('#repCard').innerHTML = `<div class="repTop"><span>🔧 СЕРВИСНЫЙ ЦЕНТР · клиент ${R.i + 1}/${CASES.length}</span><span>Касса <b>${rub(R.money)}</b> · Репутация <b>${'★'.repeat(R.rep)}${'☆'.repeat(Math.max(0, CASES.length - R.rep))}</b></span><button class="btn ghost" id="repX" style="padding:6px 12px">✕</button></div>
-    <div class="client"><div class="av">${c.av}</div><div class="bubble"><small>${c.who}</small>${c.say}</div></div>
-    <div class="repGrid"><div><div class="ptitle">Проверки (каждая занимает время)</div><div class="acts">${c.acts.map((a, j) => `<button class="act" data-j="${j}">🔍 ${a[0]}</button>`).join('')}</div></div>
-    <div><div class="ptitle">Журнал диагностики</div><div class="logbox" id="repLog"><div style="color:var(--mut)">Выбери проверку слева, чтобы собрать улики…</div></div></div></div>
-    <div class="ptitle" style="margin-top:16px">В чём проблема? Твой вывод:</div><div class="diag">${DIAG.map(d => `<button data-d="${d.id}">${d.n}</button>`).join('')}</div>
-    <div class="explain" id="repExp"></div><div class="foot"><button class="btn" id="repNext" style="display:none">Следующий клиент →</button></div>`;
-  $('#repX').onclick = () => $('#repair').classList.remove('show');
-  $('#repCard').querySelectorAll('.act').forEach(b => b.onclick = () => {
-    if (R.done || b.classList.contains('used')) return; const a = c.acts[+b.dataset.j]; b.classList.add('used'); R.used++; sfx.click();
-    const log = $('#repLog'); if (R.used === 1) log.innerHTML = '';
-    log.insertAdjacentHTML('beforeend', `<div><i>› ${a[0]}</i><br>${a[1]}</div>`); log.scrollTop = log.scrollHeight;
+const R = { i: 0, money: 0, rep: 0, used: 0, done: false, busy: false, pat: 100, clock: 600 };
+const ZONES = [
+  { id: 'cpu', n: 'CPU + кулер', ic: '🧠', s: 'left:17%;top:12%;width:22%;height:20%' },
+  { id: 'ram', n: 'RAM', ic: '🧩', s: 'left:44%;top:9%;width:15%;height:27%' },
+  { id: 'gpu', n: 'Видеокарта', ic: '🎮', s: 'left:9%;top:42%;width:56%;height:13%' },
+  { id: 'disk', n: 'SSD / HDD', ic: '💽', s: 'left:74%;top:6%;width:21%;height:26%' },
+  { id: 'fp', n: 'Кнопка + F_PANEL', ic: '🔌', s: 'left:74%;top:37%;width:21%;height:27%' },
+  { id: 'psu', n: 'Блок питания', ic: '⚡', s: 'left:5%;top:73%;width:50%;height:21%' },
+  { id: 'soft', n: 'Windows / драйверы', ic: '🪟', s: 'left:60%;top:73%;width:35%;height:21%' },
+];
+const toolIc = n => /температур|HWiNFO/i.test(n) ? '🌡️' : /LED|индикатор/i.test(n) ? '💡' : /MemTest/i.test(n) ? '🧪' : /кабел/i.test(n) ? '🔌' : /блок|БП|розетк/i.test(n) ? '⚡' : /драйвер/i.test(n) ? '💿' : /журнал/i.test(n) ? '📜' : /SMART|систем/i.test(n) ? '💽' : /стресс|FurMark|Prime/i.test(n) ? '🔥' : /отвёртк|PWR|крышк|гребёнк|CMOS|планки/i.test(n) ? '🪛' : /встройк|монитор/i.test(n) ? '🖥️' : /загрузк/i.test(n) ? '📊' : '🔍';
+const toolMin = n => /стресс|MemTest|FurMark|Prime/i.test(n) ? 30 : 15;
+const toolZone = n => /видеокарт|GPU|FurMark|встройк|драйвер/i.test(n) ? 'gpu' : /MemTest|ОЗУ|DRAM/i.test(n) ? 'ram' : /CPU|кулер|крышк|Prime/i.test(n) ? 'cpu' : /БП|блок|розетк/i.test(n) ? 'psu' : /SMART|систем/i.test(n) ? 'disk' : /PWR|F_PANEL|гребёнк/i.test(n) ? 'fp' : /журнал/i.test(n) ? 'soft' : null;
+const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+function typeIn(el, html, step = 3) {
+  return new Promise(res => {
+    const tmp = document.createElement('div'); tmp.innerHTML = html; const txt = tmp.textContent; let i = 0;
+    const iv = setInterval(() => { i += step; el.textContent = txt.slice(0, i); if (i >= txt.length) { clearInterval(iv); el.innerHTML = html; res(); } }, 16);
   });
-  $('#repCard').querySelectorAll('[data-d]').forEach(b => b.onclick = () => {
+}
+function openRepair() { Object.assign(R, { i: 0, money: 0, rep: 0, clock: 600 }); $('#repair').classList.add('show'); renderClient(); }
+function repHead() {
+  return `<span><span class="chip">🔧 МАСТЕРСКАЯ «PC//FORGE»</span><span class="chip">заказ #${(421 + R.i).toString().padStart(4, '0')} · ${R.i + 1}/${CASES.length}</span><span class="chip">🕙 ${hhmm(R.clock)}</span></span>
+    <span>Касса <b id="repCash">${rub(R.money)}</b> · <b>${'★'.repeat(R.rep)}<span style="opacity:.3">${'★'.repeat(Math.max(0, CASES.length - R.rep))}</span></b></span>`;
+}
+function setMood() {
+  const m = R.pat > 70 ? ['🙂', 'Спокоен'] : R.pat > 40 ? ['😐', 'Начинает нервничать'] : ['😤', 'Теряет терпение!'];
+  $('#repMood').innerHTML = `ТЕРПЕНИЕ КЛИЕНТА · ${m[0]} ${m[1]}<div class="bar"><i style="width:${R.pat}%"></i></div>`;
+  $('#repTop').innerHTML = repHead() + `<button class="btn ghost" id="repX" style="padding:6px 12px">✕</button>`;
+  $('#repX').onclick = () => $('#repair').classList.remove('show');
+}
+function renderClient() {
+  const c = CASES[R.i]; Object.assign(R, { used: 0, done: false, busy: false, pat: 100 });
+  $('#repCard').innerHTML = `<div class="repTop" id="repTop"></div>
+    <div class="repMain">
+      <div class="cli"><div class="av" id="repAv">${c.av}</div><div class="who">${c.who}</div><div class="say" id="repSay"></div><div class="mood" id="repMood"></div></div>
+      <div><div class="ptitle">🧰 Инструменты · каждая проверка тратит время и терпение клиента</div>
+        <div class="tools">${c.acts.map((a, j) => `<button class="tool" data-j="${j}"><span class="ic">${toolIc(a[0])}</span><span>${a[0]}<small>⏱ ${toolMin(a[0])} мин</small></span></button>`).join('')}</div>
+        <div class="term" id="repLog"><div class="hd">DIAG-TERMINAL v2.6 · журнал проверок</div><div style="color:var(--mut)">&gt; ожидание проверки <span class="cur"></span></div></div></div>
+      <div class="bench" id="repBench"><div class="ptitle">🖱 Ткни в неисправную деталь</div>
+        <div class="pcbox"><div class="mb">MOTHERBOARD · B650</div>${ZONES.map(z => `<div class="zone" data-d="${z.id}" style="${z.s}"><span>${z.ic}</span>${z.n}</div>`).join('')}</div></div>
+    </div>
+    <div class="explain" id="repExp"></div><div class="foot"><button class="btn" id="repNext" style="display:none">Следующий клиент →</button></div>`;
+  setMood(); typeIn($('#repSay'), c.say);
+  $('#repCard').querySelectorAll('.tool').forEach(b => b.onclick = () => {
+    if (R.done || R.busy || b.classList.contains('used')) return;
+    const a = c.acts[+b.dataset.j], z = toolZone(a[0]); R.busy = true; b.classList.add('run'); sfx.click();
+    if (z) { const ze = $(`#repBench [data-d="${z}"]`); ze.classList.remove('scan'); void ze.offsetWidth; ze.classList.add('scan'); }
+    setTimeout(async () => {
+      b.classList.remove('run'); b.classList.add('used'); R.used++;
+      R.clock += toolMin(a[0]); R.pat = Math.max(8, R.pat - toolMin(a[0]) * 1.1); setMood();
+      const log = $('#repLog'); if (R.used === 1) log.querySelector('div:last-child').remove();
+      const row = document.createElement('div'); row.innerHTML = `<i>$ ${a[0]}</i><br><span></span>`; log.appendChild(row);
+      await typeIn(row.querySelector('span'), a[1], 2); log.scrollTop = log.scrollHeight; R.busy = false;
+    }, 900);
+  });
+  $('#repCard').querySelectorAll('.zone').forEach(b => b.onclick = () => {
     if (R.done) return;
     if (!R.used) { toast('Сначала проведи хотя бы одну проверку: не гадай, а диагностируй!', 'err', 2500); sfx.err(); return; }
-    R.done = true; const ok = b.dataset.d === c.ans;
-    b.classList.add(ok ? 'right' : 'wrong'); if (!ok) $(`#repCard [data-d="${c.ans}"]`).classList.add('right');
-    const pay = ok ? Math.max(1500, 5000 - Math.max(0, R.used - 2) * 1000) : 0;
-    if (ok) { R.money += pay; R.rep++; sfx.ok(); addXP(R.used <= 2 ? 120 : 80, 'ремонт'); } else { G.mist++; $('#mist').textContent = G.mist; sfx.err(); }
-    $('#repExp').innerHTML = (ok ? `<b style="color:var(--ok)">Верно! Клиент доволен: +${rub(pay)}</b>${R.used <= 2 ? ' · быстрая диагностика' : ''}<br>` : `<b style="color:var(--err)">Неверно, клиент вернётся с той же проблемой 😠</b><br>`) + c.why;
+    if (R.busy) return;
+    R.done = true; const ok = b.dataset.d === c.ans, bench = $('#repBench'); bench.classList.add('lock');
+    b.classList.add(ok ? 'right' : 'wrong'); if (!ok) $(`#repBench [data-d="${c.ans}"]`).classList.add('right');
+    bench.insertAdjacentHTML('beforeend', `<div class="stamp" style="color:var(--${ok ? 'ok' : 'err'})">${ok ? 'ВЕРНО ✓' : 'ОШИБКА ✗'}</div>`);
+    const pay = ok ? Math.round((1500 + R.pat * 35) / 100) * 100 : 0;
+    $('#repAv').textContent = ok ? '😄' : '😠'; $('#repAv').style.transform = 'scale(1.15)';
+    if (ok) {
+      R.money += pay; R.rep++; sfx.ok(); addXP(R.used <= 2 ? 120 : 80, 'ремонт');
+      bench.insertAdjacentHTML('beforeend', `<div class="coin" style="left:40%;top:30%">+${rub(pay)}</div>`);
+    } else { G.mist++; $('#mist').textContent = G.mist; sfx.err(); }
+    setMood();
+    $('#repExp').innerHTML = (ok ? `<b style="color:var(--ok)">Клиент доволен и платит ${rub(pay)}</b>${R.used <= 2 ? ' · ⚡ быстрая диагностика, +XP' : ''}<br>` : `<b style="color:var(--err)">Мимо! Клиент вернётся с той же проблемой и оставит плохой отзыв 😠</b><br>`) + c.why;
     $('#repExp').classList.add('show');
     const last = R.i === CASES.length - 1; $('#repNext').style.display = ''; $('#repNext').textContent = last ? 'Итоги смены →' : 'Следующий клиент →';
     $('#repNext').onclick = () => { sfx.click(); if (last) repSummary(); else { R.i++; renderClient(); } };
+    setTimeout(() => $('#repExp').scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300);
   });
 }
 function repSummary() {
